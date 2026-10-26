@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
-  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate } from '../src/lib/model.js';
+  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate, pictureDefaults } from '../src/lib/model.js';
 
 // The same numbers label-service uses for its formats.
 const s0722430 = { key: 'w154h286', widthPt: 154, heightPt: 286, widthMm: 54, heightMm: 101 };
@@ -176,4 +176,9 @@ test('a print density chosen for the template is kept, and an empty one is left 
   const doc = toEditor(definition, { key: 'w162h90', widthPt: 162, heightPt: 90 });
   assert.equal(doc.printDensity, 'light'); assert.equal(toDefinition(doc).printDensity, 'light');
   assert.equal('printDensity' in toDefinition({ ...doc, printDensity: '' }), false);
+});
+
+test('the picture defaults shown in the panel match label-service', () => {
+  assert.deepEqual(pictureDefaults('dither'), { threshold: 140, lighten: 15 });
+  assert.deepEqual(pictureDefaults(undefined), { threshold: 128, lighten: 0 });
 });

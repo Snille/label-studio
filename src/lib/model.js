@@ -7,6 +7,8 @@ export const italicFamilies = ['Liberation Sans'];
 export const objectTypes = ['text', 'line', 'rect', 'ellipse', 'barcode', 'date', 'image'];
 export const symbologies = [['code128', 'Code 128'], ['ean13', 'EAN-13'], ['qrcode', 'QR code'], ['datamatrix', 'Data Matrix']];
 export const twoDimensional = symbology => symbology === 'qrcode' || symbology === 'datamatrix';
+// label-service's defaults for a picture's black and white conversion (0.9.1).
+export const pictureDefaults = mode => mode === 'dither' ? { threshold: 140, lighten: 15 } : { threshold: 128, lighten: 0 };
 export const dateFormats = ['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'dd.MM.yyyy', 'dd/MM/yy', 'HH:mm'];
 // The text of an object that may hold {{field}} placeholders: a text's text or a barcode's data.
 const placeholderText = item => item.type === 'text' ? item.text : item.type === 'barcode' ? item.data : item.type === 'stack' ? item.items : '';

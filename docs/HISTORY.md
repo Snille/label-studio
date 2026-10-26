@@ -1,5 +1,9 @@
 # History
 
+## 0.5.1 - 2026-10-26
+
+- The picture panel shows label-service 0.9.1's defaults: threshold 140 and lighten 15 for dithered pictures (best in the owner's paper tests), 128 and 0 for threshold pictures.
+
 ## 0.5.0 - 2026-10-26
 
 Needs label-service 0.9.0.

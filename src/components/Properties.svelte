@@ -1,5 +1,5 @@
 <script>
-  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate } from '../lib/model.js';
+  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate, pictureDefaults } from '../lib/model.js';
   import { pictures } from '../lib/pictures.svelte.js';
 
   let { editor, focusText = 0 } = $props();
@@ -211,12 +211,13 @@
           <option value="threshold">Threshold (logos)</option><option value="dither">Dither (photos, shades)</option>
         </select>
       </label>
-      <label class="wide">Threshold: {item.threshold ?? 128} — higher makes more black
-        <input type="range" min="1" max="254" value={item.threshold ?? 128} onchange={e => set('threshold', e.currentTarget.valueAsNumber === 128 ? undefined : e.currentTarget.valueAsNumber)}>
+      <label class="wide">Threshold: {item.threshold ?? pictureDefaults(item.mode).threshold} — higher makes more black
+        <input type="range" min="1" max="254" value={item.threshold ?? pictureDefaults(item.mode).threshold}
+          onchange={e => set('threshold', e.currentTarget.valueAsNumber === pictureDefaults(item.mode).threshold ? undefined : e.currentTarget.valueAsNumber)}>
       </label>
-      {@const lightenDefault = item.mode === 'dither' ? 40 : 0}
-      <label class="wide">Lighten for thermal paper: {item.lighten ?? lightenDefault} — dots print larger than on screen
-        <input type="range" min="0" max="100" value={item.lighten ?? lightenDefault} onchange={e => set('lighten', e.currentTarget.valueAsNumber === lightenDefault ? undefined : e.currentTarget.valueAsNumber)}>
+      <label class="wide">Lighten for thermal paper: {item.lighten ?? pictureDefaults(item.mode).lighten} — dots print larger than on screen
+        <input type="range" min="0" max="100" value={item.lighten ?? pictureDefaults(item.mode).lighten}
+          onchange={e => set('lighten', e.currentTarget.valueAsNumber === pictureDefaults(item.mode).lighten ? undefined : e.currentTarget.valueAsNumber)}>
       </label>
       <div class="wide checks">
         <label><input type="checkbox" checked={Boolean(item.invert)} onchange={e => set('invert', e.currentTarget.checked || undefined)}> Invert (white on black)</label>
