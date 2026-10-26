@@ -47,6 +47,8 @@ test('forwards allowed calls with the key and without the browser origin', async
     assert.equal(calls[1].url, 'http://service.test:3230/api/v1/templates/shipping-small?version=2');
     await fetch(`${app.base}/api/v1/templates/shipping-small/versions/3/publish`, { method: 'POST', headers: { 'x-api-key': key } });
     assert.equal(calls[2].url, 'http://service.test:3230/api/v1/templates/shipping-small/versions/3/publish');
+    await fetch(`${app.base}/api/v1/templates/shipping-small`, { method: 'DELETE', headers: { 'x-api-key': key } });
+    assert.deepEqual([calls[3].method, calls[3].url], ['DELETE', 'http://service.test:3230/api/v1/templates/shipping-small']);
   } finally { app.close(); }
 });
 
@@ -64,7 +66,7 @@ test('refuses admin calls and unknown API paths', async () => {
   const { calls, fetchImpl } = recorder();
   const app = await start(fetchImpl);
   try {
-    for (const [method, path] of [['GET', '/api/v1/settings'], ['PUT', '/api/v1/settings'], ['POST', '/api/v1/roll'], ['DELETE', '/api/v1/templates/abc'], ['GET', '/api/v1/templates/../settings']]) {
+    for (const [method, path] of [['GET', '/api/v1/settings'], ['PUT', '/api/v1/settings'], ['POST', '/api/v1/roll'], ['DELETE', '/api/v1/templates/abc/versions/1'], ['DELETE', '/api/v1/jobs'], ['GET', '/api/v1/templates/../settings']]) {
       const res = await fetch(`${app.base}${path}`, { method, headers: { 'x-api-key': key } });
       assert.ok([403, 404].includes(res.status), `${method} ${path} gave ${res.status}`);
     }

@@ -10,8 +10,12 @@
   let error = $state('');
   let loading = $state(true);
   let creating = $state(null);
+  let showArchived = $state(false);
 
   const presets = $derived(formats.mediaPresets);
+  // A template whose every version is archived is hidden unless asked for; label-service keeps it.
+  const shown = $derived(templates.filter(t => showArchived || !t.archived));
+  const hiddenCount = $derived(templates.filter(t => t.archived).length);
   const mediaName = key => key === '*' ? 'any roll' : presets.find(p => p.key === key)?.sku || key;
 
   async function load() {
@@ -46,6 +50,12 @@
       onopen(doc, media, null);
     } catch (e) { error = e.message; }
   }
+  // label-service deletes only templates that were never published, so no other system can depend on them.
+  async function remove() {
+    if (!confirm(`Delete "${chosen.name}" (${chosen.id}) and all its versions? This cannot be undone.`)) return;
+    try { await api(`/templates/${chosen.id}`, { method: 'DELETE' }); chosen = null; versions = []; await load(); }
+    catch (e) { error = e.message; }
+  }
   async function setStatus(version, action) {
     if (action === 'archive' && !confirm(`Archive version ${version}? Other systems stop using it.`)) return;
     try { await api(`/templates/${chosen.id}/versions/${version}/${action}`, { method: 'POST' }); await load(); await choose(templates.find(t => t.id === chosen.id)); }
@@ -71,6 +81,7 @@
   <section class="list">
     <div class="row">
       <h2 class="grow">Templates</h2>
+      <label class="inline"><input type="checkbox" bind:checked={showArchived}> Show archived{hiddenCount ? ` (${hiddenCount})` : ''}</label>
       <button onclick={load} disabled={loading}>Refresh</button>
       <button class="primary" onclick={startNew}>New template</button>
     </div>
@@ -100,8 +111,8 @@
     <table>
       <thead><tr><th>Name</th><th>Id</th><th>Format</th><th>Status</th></tr></thead>
       <tbody>
-        {#each templates as t (t.id)}
-          <tr class:chosen={chosen?.id === t.id} onclick={() => choose(t)}>
+        {#each shown as t (t.id)}
+          <tr class:chosen={chosen?.id === t.id} class:archived={t.archived} onclick={() => choose(t)}>
             <td>{t.name}</td>
             <td class="mono">{t.id}</td>
             <td>{t.builtIn ? 'any roll' : (t.media || []).map(mediaName).join(', ')}</td>
@@ -145,6 +156,12 @@
           {/each}
         </ul>
         <p class="muted small">Other systems print the newest published version. Drafts print only from Studio.</p>
+        {#if chosen.everPublished}
+          <p class="muted small">This template has been published, so other systems may use it. It cannot be deleted; archive its versions to hide it.</p>
+        {:else}
+          <button class="danger delete" onclick={remove}>Delete template</button>
+          <p class="muted small">It was never published, so no other system uses it. Deleting removes every version and cannot be undone.</p>
+        {/if}
       {/if}
     {:else}
       <p class="muted">Choose a template to see its versions.</p>
@@ -162,6 +179,9 @@
   tbody tr { cursor: pointer; }
   tbody tr:hover { background: var(--panel-2); }
   tr.chosen { background: var(--panel-2); box-shadow: inset 3px 0 var(--accent); }
+  tr.archived td { color: var(--muted); }
+  .inline { display: flex; gap: 5px; align-items: center; color: var(--text); font-size: 13px; }
+  .delete { justify-self: start; }
   .mono { font-family: 'Liberation Mono', monospace; font-size: 12px; }
   aside { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; display: grid; gap: 10px; }
   .versions { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }

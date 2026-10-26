@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.2.0, phase 1 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.3.0, phase 1 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 
@@ -18,7 +18,7 @@ browser (Studio key) ─▶ Label Studio server :3231 ─▶ label-service API :
 - **Properties:** position and size in millimetres; text with fields, font (the four families label-service ships), size in points or a format size (`$titleSize`), shrink-to size, alignment, bold, italic, wrapping, white text; line width, dashes, fill and corner radius for shapes; barcode type, data with fields, text under the bars, QR error correction; date format (`yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`) with text before and after.
 - **Fields and test data:** a `{{name}}` in a text or in barcode data creates a field. Each field has a test value that is saved with the template.
 - **Preview:** half a second after each change, label-service renders the label as a PNG with the test values. Objects that do not fit are named in the warnings and outlined on the canvas.
-- **Template library:** built-in and saved templates, versions with their status, open, duplicate, publish, archive. Saving always adds a new draft version. Other systems print the newest published version.
+- **Template library:** built-in and saved templates, versions with their status, open, duplicate, publish, archive. A template whose every version is archived is hidden until you tick Show archived. A template that was never published can be deleted with all its versions; a published one can only be archived, because other systems may use it. Saving always adds a new draft version. Other systems print the newest published version.
 - **Print one label:** with the test values, after a confirmation that names the printer and the roll. A fresh preview and a new request id are made for each print, so label-service's guards apply unchanged.
 
 The editor draws text with the browser and the same fonts, so it is close to the result but not exact. The label-service preview is the truth.
@@ -30,7 +30,7 @@ Keys in the editor: `V` select, `T` text, `L` line, `R` rectangle, `E` ellipse, 
 - Templates are edited in absolute millimetres. A template that used percentages or `right`/`bottom` (the built-in ones) is saved in millimetres for the format it was opened on.
 - The preview needs the template's roll in the chosen printer, because label-service renders on the loaded roll.
 - Images need label-service support first (upload, storage and black-and-white conversion). The interface is in English only.
-- Barcodes, QR codes and dates need label-service 0.6.0 or later.
+- Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0.
 
 ## Sign-in
 

@@ -1,5 +1,13 @@
 # History
 
+## 0.3.0 - 2026-10-26
+
+Needs label-service 0.7.0.
+
+- The library hides templates whose every version is archived; Show archived (with the number hidden) brings them back, greyed, so a version can be published again.
+- Delete template, for templates that were never published: it removes every version after a confirmation. A published template shows why it can only be archived. The Studio server forwards `DELETE /api/v1/templates/<id>` and no other delete.
+- Verified against a printer-less label-service 0.7.0 in Docker Desktop: an archived published template is hidden and shown, has no delete button, and a never-published draft is deleted. 23 unit tests.
+
 ## 0.2.0 - 2026-10-26
 
 Needs label-service 0.6.0.
