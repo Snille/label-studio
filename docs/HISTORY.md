@@ -7,6 +7,8 @@ Needs label-service 0.6.0.
 - New objects and tools: barcode (`B`, Code 128 or EAN-13), QR or Data Matrix code (`Q`) and date (`D`). Barcode data takes `{{field}}` placeholders, which create fields like text does. The properties panel sets the type, data, text under the bars and its font and size, QR error correction, placement, and the date format with text before and after.
 - The canvas draws barcodes as stand-ins that follow the data and the box (finder squares for QR, the L border for Data Matrix); the label-service preview shows the real code, sized in whole printer dots, and names a box that is too small or data that cannot be encoded.
 - Fixed: Fit made a wide label (such as 57 x 32 mm) larger than the canvas area, because it ignored the margin around the label and the grid column grew with the drawing.
+- Fixed: the numbers on the left ruler were cut off; turned a quarter, they grew outside the ruler.
+- Fixed: the preview's white area was as wide as the panel, not the label. The image now keeps its own proportions.
 - Verified against a printer-less label-service 0.6.0 in Docker Desktop: barcode, QR and date added with the tools, preview of all three, EAN-13 with a wrong check digit named in the warnings, 12 digits accepted with the check digit added. 23 unit tests.
 
 ## 0.1.2 - 2026-10-26

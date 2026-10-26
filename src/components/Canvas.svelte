@@ -147,7 +147,8 @@
     <svg class="ruler left" width="20" height={stageH} aria-hidden="true">
       {#each ticks(canvas.h) as t (t.mm)}
         <line y1={(t.mm + M) * z} y2={(t.mm + M) * z} x1={t.kind === 'major' ? 6 : t.kind === 'mid' ? 11 : 15} x2="20" />
-        {#if t.kind === 'major'}<text x="2" y={(t.mm + M) * z - 2} transform="rotate(-90 2 {(t.mm + M) * z - 2})">{t.mm}</text>{/if}
+        <!-- Turned a quarter left, the glyphs grow towards smaller x, so the baseline sits 10 px in. -->
+        {#if t.kind === 'major'}<text x="10" y={(t.mm + M) * z - 2} transform="rotate(-90 10 {(t.mm + M) * z - 2})">{t.mm}</text>{/if}
       {/each}
     </svg>
     <!-- svelte-ignore a11y_no_static_element_interactions -->

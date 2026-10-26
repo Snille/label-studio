@@ -114,7 +114,8 @@
 
 <style>
   .preview { display: grid; gap: 8px; }
-  .png { width: 100%; max-height: 46vh; object-fit: contain; background: #fff; border-radius: 4px; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); image-rendering: auto; }
+  /* The image keeps its own proportions, so the white area is exactly the label. */
+  .png { justify-self: center; width: auto; height: auto; max-width: 100%; max-height: 46vh; background: #fff; border-radius: 4px; box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4); image-rendering: auto; }
   .png.blocked { outline: 2px solid var(--danger); }
   .warnings { margin: 0; padding-left: 18px; color: var(--danger); }
   .link { background: none; border: none; padding: 0; color: inherit; text-align: left; cursor: pointer; text-decoration: underline dotted; }
