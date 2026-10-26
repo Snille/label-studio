@@ -1,5 +1,14 @@
 # History
 
+## 0.6.0 - 2026-10-26
+
+Phase 2 of the design report: an MCP server, so an LLM can design labels.
+
+- `/mcp` speaks MCP over Streamable HTTP (stateless: one JSON-RPC message per POST, answered as JSON; protocol versions 2025-06-18, 2025-03-26 and 2024-11-05), with no new packages. Tools: `list_media`, `get_design_guide`, `list_templates`, `get_template`, `preview_label` (PNG image plus `fits`, warnings per object and a token), `save_template_draft`, `list_assets`, `upload_asset`, `print_label` and `job_status`; the design guide is also a resource.
+- The client sends its own label-service key as a bearer token (the `drafter` role is meant for MCP); Label Studio passes it on and keeps none. Drafters cannot publish, and print only published templates; `print_label` is marked destructive and tells the client to ask the user before each label. Requests without a key are refused with 401, from another site's page with 403.
+- `server/design-guide.md` teaches the template format, the workflow (look at the PNG, fix, preview until it fits, save a draft) and good practice.
+- Verified end to end against a printer-less label-service 0.9.1 with a drafter key: initialize, tool list, loaded roll, picture upload, a preview naming an object that does not fit, a fixed preview with logo, name and Code 128, a saved draft, and a refused print of that draft. 30 unit tests, including the MCP shapes and errors.
+
 ## 0.5.1 - 2026-10-26
 
 - The picture panel shows label-service 0.9.1's defaults: threshold 140 and lighten 15 for dithered pictures (best in the owner's paper tests), 128 and 0 for threshold pictures.

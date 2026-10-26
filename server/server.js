@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { handleMessage } from './mcp.js';
 
 export const version = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const maxBody = 256 * 1024;
@@ -65,6 +66,32 @@ export function createApp({ env = process.env, dist = fileURLToPath(new URL('../
     res.end(bytes);
   }
 
+  // MCP: one JSON-RPC message per POST, answered as JSON. The client's key goes on to label-service, where the key's
+  // role decides what it may do. A browser page from another site may not call this endpoint.
+  async function mcp(req, res) {
+    if (req.method !== 'POST') { res.writeHead(405, { allow: 'POST', ...security }); return res.end(); }
+    if (req.headers.origin && req.headers.origin !== `http://${req.headers.host}` && req.headers.origin !== `https://${req.headers.host}`) return json(res, { error: 'Origin is not allowed.' }, 403);
+    const key = req.headers['x-api-key'] || String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    if (!key) { res.writeHead(401, { 'content-type': 'application/json', 'www-authenticate': 'Bearer', ...security }); return res.end(JSON.stringify({ error: 'Send the MCP key as a bearer token.' })); }
+    const raw = await readBody(req, 3 * 1024 * 1024);
+    if (raw === null) return json(res, { error: 'Request body is too large.' }, 413);
+    let message;
+    try { message = JSON.parse(raw.toString('utf8')); } catch { return json(res, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error.' } }); }
+    if (Array.isArray(message)) return json(res, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Batches are not supported.' } });
+    const call = async (method, path, body) => {
+      try {
+        const response = await fetchImpl(`${upstream}/api/v1${path}`, { method, headers: { 'x-api-key': key, ...(body ? { 'content-type': 'application/json' } : {}) },
+          body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(timeoutMs) });
+        return { status: response.status, data: await response.json().catch(() => null) };
+      } catch {
+        return { status: 502, data: { error: 'label-service did not answer. If you sent a print, check job_status before printing again.' } };
+      }
+    };
+    const answer = await handleMessage(message, call, version);
+    if (!answer) { res.writeHead(202, security); return res.end(); }
+    return json(res, answer);
+  }
+
   function serveFile(res, path) {
     const file = normalize(join(dist, path === '/' ? 'index.html' : decodeURIComponent(path)));
     let target = file;
@@ -86,6 +113,7 @@ export function createApp({ env = process.env, dist = fileURLToPath(new URL('../
         try { service = await (await fetchImpl(`${upstream}/healthz`, { signal: AbortSignal.timeout(3000) })).json(); } catch { /* reported as unreachable */ }
         return json(res, { ok: true, version, labelService: service?.ok ? { ok: true, version: service.version } : { ok: false } });
       }
+      if (path === '/mcp') return await mcp(req, res);
       if (path.startsWith('/api/')) {
         if (!allowed.some(([method, pattern]) => method === req.method && pattern.test(path))) {
           return json(res, { error: 'Label Studio does not forward this call. Use the label-service admin page.' }, path.startsWith('/api/v1/') ? 403 : 404);

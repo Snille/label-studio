@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.5.1, phase 1 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.6.0, phase 2 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 
@@ -32,6 +32,26 @@ Keys in the editor: `V` select, `T` text, `L` line, `R` rectangle, `E` ellipse, 
 - The preview needs the template's roll in the chosen printer, because label-service renders on the loaded roll.
 - The interface is in English only.
 - Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0; pictures need 0.8.0; lightening and print density need 0.9.0.
+
+## MCP server
+
+Label Studio is also an MCP server for LLM clients such as Claude, at  (Streamable HTTP; one JSON-RPC message per POST, answered as JSON). The client sends its own label-service key as a bearer token, normally a key with the  role; Label Studio passes it on and stores no key. LLMs propose, people publish: a drafter can preview and save drafts but not publish, and prints only published templates.
+
+| Tool | What it does |
+| --- | --- |
+|  | Printers, the loaded roll and its size in mm, the formats. |
+|  | The template format and good practice (also the resource ). |
+| ,  | Saved and built-in templates, one with its definition. |
+|  | A saved template or an unsaved definition with fields → PNG, , warnings per object, a preview token. |
+|  | A new draft version for a person to publish in Label Studio. |
+| ,  | Pictures for image objects. |
+|  | One physical label from a preview token; the tool tells the client to ask the user first. |
+|  | A print request's journal record and queue state. |
+
+Add the key to label-service (, ) and register the server in the client, for Claude Code:
+
+\
+A browser page from another site cannot call  (its Origin is refused).
 
 ## Sign-in
 
