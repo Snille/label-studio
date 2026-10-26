@@ -1,6 +1,6 @@
 <script>
   import { api } from '../lib/api.js';
-  import { problems, sampleValues, requestId as newRequestId } from '../lib/model.js';
+  import { problems, sampleValues, requestId as newRequestId, jobView } from '../lib/model.js';
 
   let { editor, formats, printer, onselect } = $props();
   let result = $state(null);
@@ -46,13 +46,22 @@
       if (!fresh.printable) { printing = { step: 'error', message: 'The label does not fit any more. Check the warnings.' }; return; }
       const record = await api('/jobs', { method: 'POST', body: { token: fresh.token, requestId } });
       printing = { step: 'done', record };
-      setTimeout(async () => {
-        try { const job = await api(`/jobs/${requestId}`); if (printing?.record?.id === requestId) printing = { ...printing, record: job.record, status: job.status }; } catch { /* the record above stands */ }
-      }, 4000);
+      follow(requestId);
     } catch (e) {
       printing = { step: 'error', message: e.message, requestId };
     }
   }
+  // Ask label-service about the job every few seconds until CUPS reports an end state, for at most three minutes.
+  // Closing the box stops it. A failed question keeps the last answer and tries again.
+  async function follow(requestId) {
+    const current = () => printing?.record?.id === requestId;
+    for (let i = 0; i < 60 && current() && !jobView(printing.record, printing.status).done; i++) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      if (!current()) return;
+      try { const job = await api(`/jobs/${requestId}`); if (current()) printing = { ...printing, record: job.record, status: job.status }; } catch { /* ask again */ }
+    }
+  }
+  const view = $derived(printing?.step === 'done' ? jobView(printing.record, printing.status) : null);
   const objectIndex = name => editor.doc.objects.findIndex((o, i) => (o.id || `${o.type}${i + 1}`) === name);
 </script>
 
@@ -92,13 +101,7 @@
     <p class="muted">Sending…</p>
   {:else if printing?.step === 'done'}
     <div class="confirm">
-      {#if printing.record.state === 'submitted'}
-        <p class="ok">Sent to the printer (CUPS job {printing.record.jobId}){printing.status ? `: ${printing.status.state || ''}` : ''}.</p>
-      {:else if printing.record.state === 'unknown'}
-        <p class="warn">The printer's answer was lost. The label may have printed. Check the printer before you print again.</p>
-      {:else}
-        <p class="error">The print was refused ({printing.record.state}). Nothing was printed.</p>
-      {/if}
+      <p class={view.kind}>{view.text}</p>
       <button onclick={() => { printing = null; }}>Close</button>
     </div>
   {:else if printing?.step === 'error'}

@@ -1,5 +1,10 @@
 # History
 
+## 0.1.2 - 2026-10-26
+
+- Fixed: after a print the status box kept saying "processing". Studio asked label-service about the job only once, four seconds after sending. It now asks every three seconds until CUPS reports an end state (completed, canceled or aborted), for at most three minutes, and shows "Printed" when the label is done. A stopped or held job is shown with its reasons. Closing the box stops the questions. A test covers the job states.
+- Paper tests on the live 5XL (2026-10-26, checked by the owner): a name label on 57 x 32 mm and a text-heavy label on 102 x 210 mm, the phase 1 goal. Empty lines between paragraphs were lost on paper; that is fixed in label-service 0.5.1.
+
 ## 0.1.1 - 2026-10-26
 
 - Fixed: printing stopped at "Sending…" on the live LAN address. The request id came from `crypto.randomUUID`, which browsers offer only on https and localhost pages; on plain http the call threw before anything was sent, outside the error handling. Studio now makes the version 4 UUID with `crypto.getRandomValues`, and every step of a print, including the id, is inside the error handling. Nothing reached label-service; no label was printed. A test makes ids with `crypto.randomUUID` removed.

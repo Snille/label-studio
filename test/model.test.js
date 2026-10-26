@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
-  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId } from '../src/lib/model.js';
+  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView } from '../src/lib/model.js';
 
 // The same numbers label-service uses for its formats.
 const s0722430 = { key: 'w154h286', widthPt: 154, heightPt: 286, widthMm: 54, heightMm: 101 };
@@ -137,4 +137,14 @@ test('print request ids are version 4 UUIDs that label-service accepts, without 
     assert.equal(ids.size, 200);
     for (const id of ids) assert.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
   } finally { Object.defineProperty(crypto, 'randomUUID', { value: saved, configurable: true }); }
+});
+
+test('a print job is followed until CUPS reports an end state', () => {
+  const sent = { state: 'submitted', jobId: 4 };
+  assert.deepEqual([jobView(sent, null).done, jobView(sent, { state: 'processing' }).done, jobView(sent, { state: 'pending' }).done], [false, false, false]);
+  assert.deepEqual(jobView(sent, { state: 'completed' }), { kind: 'ok', done: true, text: 'Printed (CUPS job 4).' });
+  for (const state of ['canceled', 'aborted']) assert.equal(jobView(sent, { state }).kind, 'error');
+  assert.match(jobView(sent, { state: 'stopped', reasons: ['media-empty'] }).text, /stopped: media-empty/);
+  assert.equal(jobView({ state: 'unknown' }).done, true);
+  assert.equal(jobView({ state: 'rejected' }).kind, 'error');
 });

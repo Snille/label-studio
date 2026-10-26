@@ -44,6 +44,18 @@ export function requestId() {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
+// What a print job looks like to the user: the journal record from label-service and, once CUPS has a job, its state.
+// done is true when the state can no longer change, so Studio stops asking.
+export function jobView(record, status) {
+  if (record.state === 'unknown') return { kind: 'warn', done: true, text: "The printer's answer was lost. The label may have printed. Check the printer before you print again." };
+  if (record.state !== 'submitted') return { kind: 'error', done: true, text: `The print was refused (${record.state}). Nothing was printed.` };
+  const job = `CUPS job ${record.jobId}`, state = status?.state;
+  if (state === 'completed') return { kind: 'ok', done: true, text: `Printed (${job}).` };
+  if (state === 'canceled' || state === 'aborted') return { kind: 'error', done: true, text: `The printer did not finish the label (${job} ${state}).` };
+  if (state === 'stopped' || state === 'held') return { kind: 'warn', done: false, text: `${job} is ${state}${status.reasons?.length ? `: ${status.reasons.join(', ')}` : ''}. Check the printer.` };
+  return { kind: 'ok', done: false, text: `Sent to the printer (${job})${state ? `: ${state}` : ''}…` };
+}
+
 let counter = 0;
 export const uid = () => `o${Date.now().toString(36)}${(counter++).toString(36)}`;
 
