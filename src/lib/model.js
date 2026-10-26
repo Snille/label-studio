@@ -4,7 +4,12 @@
 export const ptPerMm = 72 / 25.4;
 export const fontFamilies = ['Liberation Sans', 'Liberation Serif', 'Liberation Mono', 'DejaVu Sans Condensed'];
 export const italicFamilies = ['Liberation Sans'];
-export const objectTypes = ['text', 'line', 'rect', 'ellipse'];
+export const objectTypes = ['text', 'line', 'rect', 'ellipse', 'barcode', 'date'];
+export const symbologies = [['code128', 'Code 128'], ['ean13', 'EAN-13'], ['qrcode', 'QR code'], ['datamatrix', 'Data Matrix']];
+export const twoDimensional = symbology => symbology === 'qrcode' || symbology === 'datamatrix';
+export const dateFormats = ['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'dd.MM.yyyy', 'dd/MM/yy', 'HH:mm'];
+// The text of an object that may hold {{field}} placeholders: a text's text or a barcode's data.
+const placeholderText = item => item.type === 'text' ? item.text : item.type === 'barcode' ? item.data : item.type === 'stack' ? item.items : '';
 const geometryKeys = ['x', 'y', 'w', 'h', 'right', 'bottom'];
 const round = (value, step = 0.01) => Math.round(value / step) * step;
 const clean = value => +round(value).toFixed(2);
@@ -80,14 +85,13 @@ export function toEditor(definition, media) {
 export function syncFields(doc) {
   const fields = { ...doc.fields };
   for (const item of doc.objects) {
-    if (item.type !== 'text') continue;
-    for (const name of placeholders(item.text)) if (fieldName.test(name) && !fields[name]) fields[name] = { type: 'text', label: name, sample: name };
+    if (item.type !== 'text' && item.type !== 'barcode') continue;
+    for (const name of placeholders(placeholderText(item))) if (fieldName.test(name) && !fields[name]) fields[name] = { type: 'text', label: name, sample: name };
   }
   return fields;
 }
 
-export const unusedFields = doc => Object.keys(doc.fields).filter(name =>
-  !doc.objects.some(item => (item.type === 'text' && placeholders(item.text).includes(name)) || (item.type === 'stack' && placeholders(item.items).includes(name))));
+export const unusedFields = doc => Object.keys(doc.fields).filter(name => !doc.objects.some(item => placeholders(placeholderText(item)).includes(name)));
 
 export function toDefinition(doc) {
   const objects = doc.objects.map(({ uid: _, x, y, w, h, ...rest }) => {
@@ -117,7 +121,17 @@ export function newObject(type, at, canvas) {
   const fit = (w, h) => ({ w: clean(Math.min(w, canvas.w - at.x)), h: clean(Math.min(h, canvas.h - at.y)) });
   if (type === 'text') return { ...base, ...fit(Math.min(40, canvas.w * 0.6), 8), text: 'Text', font: fontFamilies[0], size: 10, align: 'left', valign: 'top' };
   if (type === 'line') return { ...base, w: clean(Math.min(30, canvas.w - at.x)), h: 0, stroke: 0.3 };
+  if (type === 'barcode') return { ...base, ...fit(Math.min(40, canvas.w * 0.7), 12), symbology: 'code128', data: '{{code}}' };
+  if (type === 'qr') return { ...base, type: 'barcode', ...fit(16, 16), symbology: 'qrcode', data: '{{code}}' };
+  if (type === 'date') return { ...base, ...fit(Math.min(30, canvas.w * 0.5), 5), format: dateFormats[0], font: fontFamilies[0], size: 8, align: 'left', valign: 'top' };
   return { ...base, ...fit(20, 12), stroke: 0.3, fill: 'none' };
+}
+
+// The same date tokens as label-service: yyyy, yy, MM, dd, HH, mm.
+export function formatDate(date, format = 'yyyy-MM-dd') {
+  const two = n => String(n).padStart(2, '0');
+  const parts = { yyyy: String(date.getFullYear()), yy: two(date.getFullYear() % 100), MM: two(date.getMonth() + 1), dd: two(date.getDate()), HH: two(date.getHours()), mm: two(date.getMinutes()) };
+  return format.replace(/yyyy|yy|MM|dd|HH|mm/g, token => parts[token]);
 }
 
 // Snapping: an edge or centre within the threshold snaps to the label's edges and centre or to other objects;
@@ -222,6 +236,7 @@ export function problems(doc) {
   const ids = doc.objects.map(o => o.id).filter(Boolean);
   if (ids.some(id => !fieldName.test(id))) list.push('Object names start with a letter and use letters, digits or _.');
   if (new Set(ids).size !== ids.length) list.push('Object names must be unique.');
-  for (const name of doc.objects.flatMap(o => o.type === 'text' ? placeholders(o.text) : [])) if (!fieldName.test(name)) list.push(`{{${name}}} is not a valid field name.`);
+  for (const name of doc.objects.flatMap(o => placeholders(placeholderText(o)))) if (!fieldName.test(name)) list.push(`{{${name}}} is not a valid field name.`);
+  if (doc.objects.some(o => o.type === 'barcode' && !String(o.data || '').trim())) list.push('Give each barcode its data.');
   return [...new Set(list)];
 }

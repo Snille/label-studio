@@ -1,5 +1,11 @@
 <script>
-  import { ptPerMm as K, snapAxis, snapTargets, sampleValues, fillText, bounds } from '../lib/model.js';
+  import { ptPerMm as K, snapAxis, snapTargets, sampleValues, fillText, bounds, formatDate, twoDimensional } from '../lib/model.js';
+  import { sketchLinear, sketchMatrix } from '../lib/sketch.js';
+
+  const rectPath = rects => rects.map(r => `M${r.x * K} ${r.y * K}h${r.w * K}v${r.h * K}h${-r.w * K}z`).join('');
+  const shownText = item => item.type === 'stack' ? fillText(item.items, values)
+    : item.type === 'date' ? `${item.prefix || ''}${formatDate(new Date(), item.format)}${item.suffix || ''}`
+    : editor.showFieldNames ? item.text : fillText(item.text, values);
 
   let { editor, warnings = [], ontextedit } = $props();
   const M = 6; // margin in mm around the label, so handles at the edge stay reachable
@@ -161,7 +167,7 @@
         {@const ink = item.color === 'white' || item.fill === 'white' ? 'white' : 'black'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <g class="object" class:warned={warned.has(objectName(item, index))} onpointerdown={e => objectDown(e, item)}>
-          {#if item.type === 'text' || item.type === 'stack'}
+          {#if item.type === 'text' || item.type === 'stack' || item.type === 'date'}
             {@const size = fontPt(item.size)}
             <foreignObject x={item.x * K} y={item.y * K} width={Math.max(item.w, 0.1) * K} height={Math.max(item.h, 0.1) * K}>
               <div class="text" style:font-family="'{item.font || 'Liberation Sans'}'" style:font-size="{size}px"
@@ -170,9 +176,23 @@
                 style:justify-content={{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[item.valign || (item.type === 'stack' ? 'middle' : 'top')]}
                 style:color={item.color === 'white' ? 'white' : 'black'} style:white-space={item.wrap === false ? 'pre' : 'pre-wrap'}
                 style:overflow-wrap={item.breakHyphens ? 'anywhere' : 'normal'}>
-                <span>{item.type === 'stack' ? fillText(item.items, values) : editor.showFieldNames ? item.text : fillText(item.text, values)}</span>
+                <span>{shownText(item)}</span>
               </div>
             </foreignObject>
+            <rect class="hit" x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} />
+          {:else if item.type === 'barcode'}
+            {@const data = editor.showFieldNames ? item.data : fillText(item.data, values)}
+            {#if twoDimensional(item.symbology)}
+              <path d={rectPath(sketchMatrix(item, data, item.symbology))} fill="black" />
+            {:else}
+              {@const size = fontPt(item.size ?? 8)}
+              {@const textMm = item.humanReadable === 'none' ? 0 : size * 1.2 / K}
+              <path d={rectPath(sketchLinear(item, data, Math.max(item.h - textMm, 0.5)))} fill="black" />
+              {#if item.humanReadable !== 'none'}
+                <text x={(item.x + item.w / 2) * K} y={(item.y + item.h) * K - size * 0.25} font-size={size} text-anchor="middle"
+                  font-family="'{item.font || 'Liberation Sans'}'" fill="black">{data}</text>
+              {/if}
+            {/if}
             <rect class="hit" x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} />
           {:else if item.type === 'line'}
             <line x1={item.x * K} y1={item.y * K} x2={(item.x + item.w) * K} y2={(item.y + item.h) * K} stroke="black"

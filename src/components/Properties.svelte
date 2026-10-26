@@ -1,28 +1,85 @@
 <script>
-  import { fontFamilies, italicFamilies, fieldName } from '../lib/model.js';
+  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate } from '../lib/model.js';
 
   let { editor, focusText = 0 } = $props();
   let textArea = $state();
+  let dataInput = $state();
   const item = $derived(editor.selection.length === 1 ? editor.selection[0] : null);
   const formatSizes = [['$titleSize', 'Title size'], ['$descriptionSize', 'Description size'], ['$locationSize', 'Location size'], ['$locationLabelSize', 'Location label size']];
+  const fieldNames = $derived(Object.keys(editor.definition.fields));
   const commit = () => editor.commit();
   const set = (key, value) => { editor.update(item.uid, { [key]: value }); commit(); };
   const num = (value, fallback) => Number.isFinite(value) ? value : fallback;
+  const optional = value => Number.isFinite(value) ? value : undefined;
 
   $effect(() => { if (focusText && textArea) { textArea.focus(); textArea.select(); } });
 
-  function insertField(event) {
+  // Puts {{name}} where the cursor is in the text or data box.
+  function insertField(event, key, element) {
     const name = event.currentTarget.value; event.currentTarget.value = '';
     if (!name) return;
-    const start = textArea?.selectionStart ?? item.text.length, end = textArea?.selectionEnd ?? start;
-    set('text', `${item.text.slice(0, start)}{{${name}}}${item.text.slice(end)}`);
+    const value = item[key] || '', start = element?.selectionStart ?? value.length, end = element?.selectionEnd ?? start;
+    set(key, `${value.slice(0, start)}{{${name}}}${value.slice(end)}`);
   }
   const dashText = $derived(item?.dash?.join(' ') || '');
   function setDash(value) {
     const parts = value.trim() ? value.trim().split(/[\s,]+/).map(Number) : [];
     if (parts.every(n => Number.isFinite(n) && n >= 0.1 && n <= 50) && parts.length <= 8) set('dash', parts.length ? parts : undefined);
   }
+  function setSymbology(value) {
+    const changes = { symbology: value };
+    if (twoDimensional(value)) { changes.humanReadable = undefined; const side = Math.min(item.w, item.h); changes.w = side; changes.h = side; }
+    if (value !== 'qrcode') changes.ecLevel = undefined;
+    editor.update(item.uid, changes); commit();
+  }
 </script>
+
+{#snippet fieldPicker(key, element)}
+  {#if fieldNames.length}
+    <label class="wide">Insert field
+      <select onchange={e => insertField(e, key, element)}>
+        <option value="">Choose a field…</option>
+        {#each fieldNames as name (name)}<option value={name}>{name}</option>{/each}
+      </select>
+    </label>
+  {/if}
+{/snippet}
+
+{#snippet fontAndSize(fallback)}
+  <label class="wide">Font
+    <select value={item.font || 'Liberation Sans'} onchange={e => { set('font', e.currentTarget.value); if (!italicFamilies.includes(e.currentTarget.value) && item.italic) set('italic', undefined); }}>
+      {#each fontFamilies as f (f)}<option value={f}>{f}</option>{/each}
+    </select>
+  </label>
+  <label>Size
+    <select value={typeof item.size === 'string' ? item.size : 'pt'} onchange={e => set('size', e.currentTarget.value === 'pt' ? fallback : e.currentTarget.value)}>
+      <option value="pt">Points</option>
+      {#each formatSizes as [k, name] (k)}<option value={k}>{name} ({editor.style?.[k.slice(1)]} pt)</option>{/each}
+    </select>
+  </label>
+  {#if typeof item.size !== 'string'}
+    <label>Points<input type="number" min="4" max="200" step="0.5" value={item.size ?? fallback} onchange={e => set('size', num(e.currentTarget.valueAsNumber, fallback))}></label>
+  {:else}<span></span>{/if}
+{/snippet}
+
+{#snippet placement(valignDefault)}
+  <label>Horizontal
+    <select value={item.align || 'center'} onchange={e => set('align', e.currentTarget.value)}>
+      <option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option>
+    </select>
+  </label>
+  <label>Vertical
+    <select value={item.valign || valignDefault} onchange={e => set('valign', e.currentTarget.value)}>
+      <option value="top">Top</option><option value="middle">Middle</option><option value="bottom">Bottom</option>
+    </select>
+  </label>
+{/snippet}
+
+{#snippet shrink()}
+  <label>Shrink to (pt)
+    <input type="number" min="4" max="200" step="0.5" value={item.minSize ?? ''} placeholder="no" onchange={e => set('minSize', optional(e.currentTarget.valueAsNumber))}>
+  </label>
+{/snippet}
 
 {#if !item}
   {#if editor.selected.length > 1}
@@ -54,44 +111,13 @@
       <label class="wide">Text — use {'{{field}}'} for values from other systems
         <textarea bind:this={textArea} rows="3" bind:value={item.text} onchange={commit}></textarea>
       </label>
-      {#if Object.keys(editor.definition.fields).length}
-        <label class="wide">Insert field
-          <select onchange={insertField}>
-            <option value="">Choose a field…</option>
-            {#each Object.keys(editor.definition.fields) as name (name)}<option value={name}>{name}</option>{/each}
-          </select>
-        </label>
-      {/if}
-      <label class="wide">Font
-        <select value={item.font || 'Liberation Sans'} onchange={e => { set('font', e.currentTarget.value); if (!italicFamilies.includes(e.currentTarget.value) && item.italic) set('italic', undefined); }}>
-          {#each fontFamilies as f (f)}<option value={f}>{f}</option>{/each}
-        </select>
-      </label>
-      <label>Size
-        <select value={typeof item.size === 'string' ? item.size : 'pt'} onchange={e => set('size', e.currentTarget.value === 'pt' ? 10 : e.currentTarget.value)}>
-          <option value="pt">Points</option>
-          {#each formatSizes as [k, name] (k)}<option value={k}>{name} ({editor.style?.[k.slice(1)]} pt)</option>{/each}
-        </select>
-      </label>
-      {#if typeof item.size !== 'string'}
-        <label>Points<input type="number" min="4" max="200" step="0.5" value={item.size ?? 10} onchange={e => set('size', num(e.currentTarget.valueAsNumber, 10))}></label>
-      {:else}<span></span>{/if}
-      <label>Shrink to (pt)
-        <input type="number" min="4" max="200" step="0.5" value={item.minSize ?? ''} placeholder="no" onchange={e => set('minSize', Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : undefined)}>
-      </label>
+      {@render fieldPicker('text', textArea)}
+      {@render fontAndSize(10)}
+      {@render shrink()}
       <label>Line height
-        <input type="number" min="0.8" max="3" step="0.05" value={item.lineHeight ?? ''} placeholder="1.2" onchange={e => set('lineHeight', Number.isFinite(e.currentTarget.valueAsNumber) ? e.currentTarget.valueAsNumber : undefined)}>
+        <input type="number" min="0.8" max="3" step="0.05" value={item.lineHeight ?? ''} placeholder="1.2" onchange={e => set('lineHeight', optional(e.currentTarget.valueAsNumber))}>
       </label>
-      <label>Horizontal
-        <select value={item.align || 'center'} onchange={e => set('align', e.currentTarget.value)}>
-          <option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option>
-        </select>
-      </label>
-      <label>Vertical
-        <select value={item.valign || 'top'} onchange={e => set('valign', e.currentTarget.value)}>
-          <option value="top">Top</option><option value="middle">Middle</option><option value="bottom">Bottom</option>
-        </select>
-      </label>
+      {@render placement('top')}
       <div class="wide checks">
         <label><input type="checkbox" checked={Boolean(item.bold)} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
         <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!italicFamilies.includes(item.font || 'Liberation Sans')} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
@@ -99,6 +125,58 @@
         <label><input type="checkbox" checked={Boolean(item.breakHyphens)} onchange={e => set('breakHyphens', e.currentTarget.checked || undefined)}> Break at hyphens</label>
         <label><input type="checkbox" checked={item.color === 'white'} onchange={e => set('color', e.currentTarget.checked ? 'white' : undefined)}> White text</label>
       </div>
+    {:else if item.type === 'date'}
+      <label class="wide">Format — yyyy, yy, MM, dd, HH, mm
+        <input list="date-formats" value={item.format || 'yyyy-MM-dd'} onchange={e => set('format', e.currentTarget.value.trim() || undefined)}>
+        <datalist id="date-formats">{#each dateFormats as f (f)}<option value={f}></option>{/each}</datalist>
+      </label>
+      <label>Text before<input value={item.prefix || ''} onchange={e => set('prefix', e.currentTarget.value || undefined)}></label>
+      <label>Text after<input value={item.suffix || ''} onchange={e => set('suffix', e.currentTarget.value || undefined)}></label>
+      <p class="wide muted small">Now: {item.prefix || ''}{formatDate(new Date(), item.format)}{item.suffix || ''}. The label gets the time of its preview.</p>
+      {@render fontAndSize(8)}
+      {@render shrink()}
+      <span></span>
+      {@render placement('top')}
+      <div class="wide checks">
+        <label><input type="checkbox" checked={Boolean(item.bold)} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
+        <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!italicFamilies.includes(item.font || 'Liberation Sans')} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
+        <label><input type="checkbox" checked={item.color === 'white'} onchange={e => set('color', e.currentTarget.checked ? 'white' : undefined)}> White text</label>
+      </div>
+    {:else if item.type === 'barcode'}
+      <label class="wide">Type
+        <select value={item.symbology} onchange={e => setSymbology(e.currentTarget.value)}>
+          {#each symbologies as [key, name] (key)}<option value={key}>{name}</option>{/each}
+        </select>
+      </label>
+      <label class="wide">Data — use {'{{field}}'} for values from other systems
+        <input bind:this={dataInput} bind:value={item.data} onchange={commit}>
+      </label>
+      {#if item.symbology === 'ean13'}<p class="wide muted small">12 digits; label-service adds the check digit. 13 digits must have the right check digit.</p>{/if}
+      {@render fieldPicker('data', dataInput)}
+      {#if twoDimensional(item.symbology)}
+        {#if item.symbology === 'qrcode'}
+          <label>Error correction
+            <select value={item.ecLevel || 'M'} onchange={e => set('ecLevel', e.currentTarget.value === 'M' ? undefined : e.currentTarget.value)}>
+              <option value="L">L (7 %)</option><option value="M">M (15 %)</option><option value="Q">Q (25 %)</option><option value="H">H (30 %)</option>
+            </select>
+          </label><span></span>
+        {/if}
+        {@render placement('middle')}
+        <p class="wide muted small">The code is square and as large as the box allows in whole printer dots (at least 3 per module).</p>
+      {:else}
+        <label class="wide">Text under the bars
+          <select value={item.humanReadable || 'below'} onchange={e => set('humanReadable', e.currentTarget.value === 'below' ? undefined : e.currentTarget.value)}>
+            <option value="below">Show</option><option value="none">Hide</option>
+          </select>
+        </label>
+        {#if item.humanReadable !== 'none'}{@render fontAndSize(8)}{/if}
+        <label>Horizontal
+          <select value={item.align || 'center'} onchange={e => set('align', e.currentTarget.value)}>
+            <option value="left">Left</option><option value="center">Centre</option><option value="right">Right</option>
+          </select>
+        </label>
+        <p class="wide muted small">The bars fill the box width in whole printer dots (at least 2 per bar). Leave some space on each side for scanning.</p>
+      {/if}
     {:else if item.type === 'stack'}
       <p class="wide muted">Free lines from the field {item.items}. Edit the lines as test data in the Fields tab.</p>
     {:else}
@@ -131,5 +209,6 @@
   .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
   .checks label { display: flex; align-items: center; gap: 5px; color: var(--text); font-size: 13px; }
   .help { padding-left: 18px; font-size: 12px; }
+  .small { font-size: 12px; }
   p { margin: 0; }
 </style>

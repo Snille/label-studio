@@ -14,12 +14,13 @@
   let saving = $state(false);
   let areaW = $state(800), areaH = $state(600);
 
-  const tools = [['select', 'Select', '↖'], ['text', 'Text', 'T'], ['line', 'Line', '╱'], ['rect', 'Rectangle', '▭'], ['ellipse', 'Ellipse', '◯']];
+  const tools = [['select', 'Select', '↖'], ['text', 'Text', 'T'], ['line', 'Line', '╱'], ['rect', 'Rectangle', '▭'], ['ellipse', 'Ellipse', '◯'], ['barcode', 'Barcode', '|||'], ['qr', 'QR or Data Matrix code', '▦'], ['date', 'Date and time', '◷']];
   const saveProblems = $derived(problems(editor.doc));
   const one = $derived(editor.selected.length > 0);
 
   function fit() {
-    const zoom = Math.min((areaW - 90) / editor.canvas.w, (areaH - 90) / editor.canvas.h);
+    // The stage has a 6 mm margin on each side; the ruler and padding take about 60 px.
+    const zoom = Math.min((areaW - 60) / (editor.canvas.w + 12), (areaH - 60) / (editor.canvas.h + 12));
     editor.zoom = Math.max(1, Math.min(40, +zoom.toFixed(2)));
   }
   let fitted = null, fittedSize = '';
@@ -56,6 +57,7 @@
 
   function selectObject(index) { editor.selected = [editor.doc.objects[index].uid]; tab = 'object'; }
 
+  const keys = { v: 'select', t: 'text', l: 'line', r: 'rect', e: 'ellipse', b: 'barcode', q: 'qr', d: 'date' };
   function keydown(event) {
     const target = event.target;
     if (target.closest?.('input, textarea, select, [contenteditable]')) return;
@@ -74,7 +76,7 @@
     else if (key === 'Delete' || key === 'Backspace') editor.remove();
     else if (key === 'Escape') { editor.selected = []; editor.tool = 'select'; }
     else if (arrows[key] && one) { editor.nudge(...arrows[key], ctrl); editor.commit(); }
-    else if (!ctrl && !event.altKey && ['v', 't', 'l', 'r', 'e'].includes(key.toLowerCase())) editor.tool = { v: 'select', t: 'text', l: 'line', r: 'rect', e: 'ellipse' }[key.toLowerCase()];
+    else if (!ctrl && !event.altKey && keys[key.toLowerCase()]) editor.tool = keys[key.toLowerCase()];
     else handled = false;
     if (handled) event.preventDefault();
   }
@@ -147,7 +149,8 @@
 </div>
 
 <style>
-  .editor { display: grid; grid-template-columns: 46px 1fr 370px; grid-template-rows: auto 1fr; min-height: 0; }
+  /* minmax(0, 1fr): a wide label scrolls inside the canvas area instead of widening the column. */
+  .editor { display: grid; grid-template-columns: 46px minmax(0, 1fr) 370px; grid-template-rows: auto minmax(0, 1fr); min-height: 0; }
   .toolbar { grid-column: 1 / -1; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--panel); gap: 6px; flex-wrap: nowrap; overflow-x: auto; }
   .toolbar > * { flex-shrink: 0; }
   .toolbar .message { flex-shrink: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -162,5 +165,5 @@
   .tabs button { font-size: 12px; padding: 4px 8px; }
   .ok { color: var(--accent); }
   .refresh { justify-self: start; font-size: 12px; }
-  @media (max-width: 1000px) { .editor { grid-template-columns: 46px 1fr; } aside { grid-column: 1 / -1; border-left: none; border-top: 1px solid var(--line); } }
+  @media (max-width: 1000px) { .editor { grid-template-columns: 46px minmax(0, 1fr); } aside { grid-column: 1 / -1; border-left: none; border-top: 1px solid var(--line); } }
 </style>

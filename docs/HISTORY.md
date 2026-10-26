@@ -1,5 +1,14 @@
 # History
 
+## 0.2.0 - 2026-10-26
+
+Needs label-service 0.6.0.
+
+- New objects and tools: barcode (`B`, Code 128 or EAN-13), QR or Data Matrix code (`Q`) and date (`D`). Barcode data takes `{{field}}` placeholders, which create fields like text does. The properties panel sets the type, data, text under the bars and its font and size, QR error correction, placement, and the date format with text before and after.
+- The canvas draws barcodes as stand-ins that follow the data and the box (finder squares for QR, the L border for Data Matrix); the label-service preview shows the real code, sized in whole printer dots, and names a box that is too small or data that cannot be encoded.
+- Fixed: Fit made a wide label (such as 57 x 32 mm) larger than the canvas area, because it ignored the margin around the label and the grid column grew with the drawing.
+- Verified against a printer-less label-service 0.6.0 in Docker Desktop: barcode, QR and date added with the tools, preview of all three, EAN-13 with a wrong check digit named in the warnings, 12 digits accepted with the check digit added. 24 unit tests.
+
 ## 0.1.2 - 2026-10-26
 
 - Fixed: after a print the status box kept saying "processing". Studio asked label-service about the job only once, four seconds after sending. It now asks every three seconds until CUPS reports an end state (completed, canceled or aborted), for at most three minutes, and shows "Printed" when the label is done. A stopped or held job is shown with its reasons. Closing the box stops the questions. A test covers the job states.

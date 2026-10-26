@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
-  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView } from '../src/lib/model.js';
+  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate } from '../src/lib/model.js';
 
 // The same numbers label-service uses for its formats.
 const s0722430 = { key: 'w154h286', widthPt: 154, heightPt: 286, widthMm: 54, heightMm: 101 };
@@ -147,4 +147,17 @@ test('a print job is followed until CUPS reports an end state', () => {
   assert.match(jobView(sent, { state: 'stopped', reasons: ['media-empty'] }).text, /stopped: media-empty/);
   assert.equal(jobView({ state: 'unknown' }).done, true);
   assert.equal(jobView({ state: 'rejected' }).kind, 'error');
+});
+
+test('barcodes take part in fields, and new barcode, QR and date objects have usable defaults', () => {
+  const canvas = { w: 57, h: 32 };
+  const bar = newObject('barcode', { x: 2, y: 2 }, canvas), qr = newObject('qr', { x: 40, y: 2 }, canvas), date = newObject('date', { x: 2, y: 26 }, canvas);
+  assert.deepEqual([bar.type, bar.symbology, qr.type, qr.symbology, qr.w, qr.h], ['barcode', 'code128', 'barcode', 'qrcode', 16, 16]);
+  assert.equal(date.format, 'yyyy-MM-dd');
+  const doc = { id: 'codes', name: 'Codes', media: ['w162h90'], orientation: 'landscape', fields: { old: { type: 'text' } }, objects: [{ ...bar, data: 'X-{{orderNo}}' }, qr, date] };
+  assert.deepEqual(Object.keys(toDefinition(doc).fields), ['old', 'orderNo', 'code']);
+  assert.deepEqual(unusedFields({ ...doc, fields: toDefinition(doc).fields }), ['old']);
+  assert.deepEqual(problems(doc), []);
+  assert.deepEqual(problems({ ...doc, objects: [{ ...bar, data: ' ' }] }), ['Give each barcode its data.']);
+  assert.equal(formatDate(new Date(2026, 0, 5, 7, 9), 'dd.MM.yy HH:mm'), '05.01.26 07:09');
 });
