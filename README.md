@@ -35,23 +35,26 @@ Keys in the editor: `V` select, `T` text, `L` line, `R` rectangle, `E` ellipse, 
 
 ## MCP server
 
-Label Studio is also an MCP server for LLM clients such as Claude, at  (Streamable HTTP; one JSON-RPC message per POST, answered as JSON). The client sends its own label-service key as a bearer token, normally a key with the  role; Label Studio passes it on and stores no key. LLMs propose, people publish: a drafter can preview and save drafts but not publish, and prints only published templates.
+Label Studio is also an MCP server for LLM clients such as Claude, at `/mcp` (Streamable HTTP; one JSON-RPC message per POST, answered as JSON). The client sends its own label-service key as a bearer token, normally a key with the `drafter` role; Label Studio passes it on and stores no key. LLMs propose, people publish: a drafter can preview and save drafts but not publish, and prints only published templates.
 
 | Tool | What it does |
 | --- | --- |
-|  | Printers, the loaded roll and its size in mm, the formats. |
-|  | The template format and good practice (also the resource ). |
-| ,  | Saved and built-in templates, one with its definition. |
-|  | A saved template or an unsaved definition with fields → PNG, , warnings per object, a preview token. |
-|  | A new draft version for a person to publish in Label Studio. |
-| ,  | Pictures for image objects. |
-|  | One physical label from a preview token; the tool tells the client to ask the user first. |
-|  | A print request's journal record and queue state. |
+| `list_media` | Printers, the loaded roll and its size in mm, the formats. |
+| `get_design_guide` | The template format and good practice (also the resource `label-studio://design-guide`). |
+| `list_templates`, `get_template` | Saved and built-in templates, one with its definition. |
+| `preview_label` | A saved template or an unsaved definition with fields → PNG, `fits`, warnings per object, a preview token. |
+| `save_template_draft` | A new draft version for a person to publish in Label Studio. |
+| `list_assets`, `upload_asset` | Pictures for image objects. |
+| `print_label` | One physical label from a preview token; the tool tells the client to ask the user first. |
+| `job_status` | A print request's journal record and queue state. |
 
-Add the key to label-service (, ) and register the server in the client, for Claude Code:
+Add the key to label-service (`LABEL_CLIENT_KEYS=...,mcp=<key>`, `LABEL_CLIENT_ROLES=...,mcp=drafter`) and register the server in the client, for Claude Code:
 
-\
-A browser page from another site cannot call  (its Origin is refused).
+```
+claude mcp add --transport http label-studio http://<studio host>:3231/mcp --header "Authorization: Bearer <mcp key>"
+```
+
+A browser page from another site cannot call `/mcp` (its Origin is refused).
 
 ## Sign-in
 
