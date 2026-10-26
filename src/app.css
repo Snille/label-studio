@@ -1,0 +1,76 @@
+/* Dark is the default; light follows the system setting. The accent is the house green. */
+:root {
+  --bg: #0b0f0a;
+  --panel: #121810;
+  --panel-2: #182016;
+  --line: #2a3527;
+  --text: #d9e4d2;
+  --muted: #8d9c87;
+  --accent: #95c200;
+  --accent-text: #0b0f0a;
+  --danger: #ff6b5b;
+  --warn: #f2c14e;
+  --stage: #070a06;
+  --grid: rgba(149, 194, 0, 0.13);
+  --focus: 0 0 0 2px rgba(149, 194, 0, 0.55);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6f1;
+    --panel: #ffffff;
+    --panel-2: #eef2ea;
+    --line: #d3dacd;
+    --text: #1d2619;
+    --muted: #5f6b59;
+    --accent: #5f7d00;
+    --accent-text: #ffffff;
+    --danger: #c0392b;
+    --warn: #9a6b00;
+    --stage: #dde3d8;
+    --grid: rgba(95, 125, 0, 0.16);
+    color-scheme: light;
+  }
+}
+
+@font-face { font-family: 'Liberation Sans'; src: url('/fonts/LiberationSans-Regular.ttf'); }
+@font-face { font-family: 'Liberation Sans'; font-weight: bold; src: url('/fonts/LiberationSans-Bold.ttf'); }
+@font-face { font-family: 'Liberation Sans'; font-style: italic; src: url('/fonts/LiberationSans-Italic.ttf'); }
+@font-face { font-family: 'Liberation Sans'; font-weight: bold; font-style: italic; src: url('/fonts/LiberationSans-BoldItalic.ttf'); }
+@font-face { font-family: 'Liberation Serif'; src: url('/fonts/LiberationSerif-Regular.ttf'); }
+@font-face { font-family: 'Liberation Serif'; font-weight: bold; src: url('/fonts/LiberationSerif-Bold.ttf'); }
+@font-face { font-family: 'Liberation Mono'; src: url('/fonts/LiberationMono-Regular.ttf'); }
+@font-face { font-family: 'Liberation Mono'; font-weight: bold; src: url('/fonts/LiberationMono-Bold.ttf'); }
+@font-face { font-family: 'DejaVu Sans Condensed'; src: url('/fonts/DejaVuSansCondensed.ttf'); }
+@font-face { font-family: 'DejaVu Sans Condensed'; font-weight: bold; src: url('/fonts/DejaVuSansCondensed-Bold.ttf'); }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, 'Segoe UI', sans-serif; }
+#app { height: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+button.danger { color: var(--danger); }
+button.active { border-color: var(--accent); color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; box-shadow: var(--focus); }
+input, select, textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 7px; min-width: 0; }
+input[type='checkbox'] { accent-color: var(--accent); }
+textarea { resize: vertical; }
+label { color: var(--muted); font-size: 12px; }
+h1, h2, h3 { margin: 0; font-weight: 600; }
+h2 { font-size: 15px; }
+h3 { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.muted { color: var(--muted); }
+.error { color: var(--danger); }
+.warn { color: var(--warn); }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.status { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); }
+.status.published { color: var(--accent); border-color: var(--accent); }
+.status.draft { color: var(--warn); border-color: var(--warn); }
+.status.archived { color: var(--muted); }

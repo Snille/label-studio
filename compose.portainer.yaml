@@ -1,0 +1,12 @@
+# The Studio service to add to the label-service Portainer stack (decision B3). It reaches the API over the stack
+# network, so the API needs no browser origin. Set LABEL_STUDIO_IMAGE to pin another tag or digest.
+services:
+  studio:
+    image: ${LABEL_STUDIO_IMAGE:-mrsnille/label-studio:0.1.0}
+    depends_on: [api]
+    ports:
+      # Publish on the LAN only; never forward this port from the internet.
+      - "${STUDIO_BIND:-0.0.0.0}:${STUDIO_PORT:-3231}:3231"
+    environment:
+      LABEL_SERVICE_URL: http://api:3230
+    restart: unless-stopped

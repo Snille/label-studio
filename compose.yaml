@@ -1,0 +1,20 @@
+# Local test: Label Studio with a label-service that has no printer. Nothing can print from this stack.
+# docker compose up -d --build, then open http://127.0.0.1:3231 and sign in with the development Studio key below.
+name: label-studio-dev
+services:
+  api:
+    image: mrsnille/label-service:0.5.0
+    environment:
+      LABEL_ADMIN_KEY: development-admin-key
+      LABEL_CLIENT_KEYS: studio=development-studio-key
+      LABEL_CLIENT_ROLES: studio=designer
+      PRINTER_MODEL: lw5xl
+    ports:
+      - "127.0.0.1:3230:3230"
+  studio:
+    build: .
+    depends_on: [api]
+    environment:
+      LABEL_SERVICE_URL: http://api:3230
+    ports:
+      - "127.0.0.1:3231:3231"

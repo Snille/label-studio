@@ -1,0 +1,20 @@
+{
+  "name": "label-studio",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "start": "node server/server.js",
+    "test": "node --test --test-timeout=20000",
+    "check": "node scripts/check.js"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "svelte": "5.57.3",
+    "vite": "8.3.5"
+  }
+}
