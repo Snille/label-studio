@@ -2,7 +2,7 @@
 # network, so the API needs no browser origin. Set LABEL_STUDIO_IMAGE to pin another tag or digest.
 services:
   studio:
-    image: ${LABEL_STUDIO_IMAGE:-mrsnille/label-studio:0.4.0}
+    image: ${LABEL_STUDIO_IMAGE:-mrsnille/label-studio:0.5.0}
     depends_on: [api]
     ports:
       # Publish on the LAN only; never forward this port from the internet.

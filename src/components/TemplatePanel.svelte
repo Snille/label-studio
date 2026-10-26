@@ -25,6 +25,13 @@
       <option value="landscape">Landscape (along the label)</option>
     </select>
   </label>
+  <label>Print density (DYMO driver)
+    <select value={editor.doc.printDensity || ''} onchange={e => { editor.doc.printDensity = e.currentTarget.value; commit(); }}>
+      <option value="">Printer default</option>
+      <option value="light">Light</option><option value="medium">Medium</option><option value="normal">Normal</option><option value="dark">Dark</option>
+    </select>
+  </label>
+  <p class="muted">Labels with a picture or a barcode print in the driver's graphics quality. Light helps when pictures print too dark.</p>
   <p class="muted">The canvas is {editor.canvas.w.toFixed(1)} × {editor.canvas.h.toFixed(1)} mm. Objects keep their millimetre positions when the format or direction changes.</p>
   {#if editor.source}
     <p class="muted">Opened from version {editor.source.version} ({editor.source.status}). Saving adds a new draft version.</p>

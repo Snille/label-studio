@@ -170,3 +170,10 @@ test('a new image object asks for its picture before saving or previewing', () =
   assert.deepEqual(problems({ ...doc, objects: [{ ...image, asset: 'abcdefabcdef' }] }), []);
   assert.equal(toDefinition({ ...doc, objects: [{ ...image, asset: 'abcdefabcdef', mode: 'dither' }] }).objects[0].asset, 'abcdefabcdef');
 });
+
+test('a print density chosen for the template is kept, and an empty one is left out', () => {
+  const definition = { id: 'dense', name: 'Dense', media: ['w162h90'], printDensity: 'light', fields: {}, objects: [{ type: 'rect', x: 1, y: 1, w: 5, h: 5 }] };
+  const doc = toEditor(definition, { key: 'w162h90', widthPt: 162, heightPt: 90 });
+  assert.equal(doc.printDensity, 'light'); assert.equal(toDefinition(doc).printDensity, 'light');
+  assert.equal('printDensity' in toDefinition({ ...doc, printDensity: '' }), false);
+});

@@ -1,5 +1,13 @@
 # History
 
+## 0.5.0 - 2026-10-26
+
+Needs label-service 0.9.0.
+
+- Image objects get "Lighten for thermal paper" (0-100; 40 by default for dithered pictures), because a dithered photo printed much darker on paper than in the preview.
+- The template panel sets the print density (printer default, light, medium, normal, dark). Labels with a picture or a barcode now print in the DYMO driver's graphics quality (set by label-service).
+- Verified against a printer-less label-service 0.9.0: the slider shows its default, and the preview answer carries `Graphics` quality and `Light` density. 26 unit tests.
+
 ## 0.4.0 - 2026-10-26
 
 Needs label-service 0.8.0.

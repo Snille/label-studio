@@ -78,7 +78,7 @@ export function toEditor(definition, media) {
     return { ...structuredClone(rest), uid: uid(), x: clean(box.x), y: clean(box.y), w: clean(box.w), h: clean(box.h) };
   });
   return { id: definition.id, name: definition.name, description: definition.description || '', media: definition.media.includes('*') ? [media.key] : [...definition.media],
-    orientation, fields: structuredClone(definition.fields || {}), objects };
+    orientation, printDensity: definition.printDensity || '', fields: structuredClone(definition.fields || {}), objects };
 }
 
 // Fields used in text that are not declared yet become plain text fields, so a placeholder always has a field.
@@ -100,6 +100,7 @@ export function toDefinition(doc) {
   });
   const definition = { id: doc.id, name: doc.name.trim(), media: [...doc.media], orientation: doc.orientation, fields: syncFields(doc), objects };
   if (doc.description?.trim()) definition.description = doc.description.trim();
+  if (doc.printDensity) definition.printDensity = doc.printDensity;
   return definition;
 }
 

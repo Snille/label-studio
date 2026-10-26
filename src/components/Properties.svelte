@@ -214,6 +214,10 @@
       <label class="wide">Threshold: {item.threshold ?? 128} — higher makes more black
         <input type="range" min="1" max="254" value={item.threshold ?? 128} onchange={e => set('threshold', e.currentTarget.valueAsNumber === 128 ? undefined : e.currentTarget.valueAsNumber)}>
       </label>
+      {@const lightenDefault = item.mode === 'dither' ? 40 : 0}
+      <label class="wide">Lighten for thermal paper: {item.lighten ?? lightenDefault} — dots print larger than on screen
+        <input type="range" min="0" max="100" value={item.lighten ?? lightenDefault} onchange={e => set('lighten', e.currentTarget.valueAsNumber === lightenDefault ? undefined : e.currentTarget.valueAsNumber)}>
+      </label>
       <div class="wide checks">
         <label><input type="checkbox" checked={Boolean(item.invert)} onchange={e => set('invert', e.currentTarget.checked || undefined)}> Invert (white on black)</label>
       </div>
