@@ -1,5 +1,14 @@
 # History
 
+## 0.4.0 - 2026-10-26
+
+Needs label-service 0.8.0.
+
+- Pictures: the image tool (`I`) places an uploaded picture. Its properties choose the picture or upload a new one (PNG, JPEG or SVG, at most 2 MB), keep proportions or stretch, threshold for logos or dithering for photos, the threshold level, invert and placement. The canvas shows the picture in grey; the label-service preview shows the black and white dots that print.
+- The library lists the pictures with thumbnails, uploads new ones and deletes a picture that no saved template uses (label-service names the templates that still use it).
+- The Studio server forwards the picture calls, with a 3 MB body limit for uploads only; picture bytes pass through unchanged.
+- Verified against a printer-less label-service 0.8.0 in Docker Desktop: upload from the library, an image object with a picture in the editor and its black and white preview, a used picture refused for deletion, an unused one deleted. 25 unit tests.
+
 ## 0.3.0 - 2026-10-26
 
 Needs label-service 0.7.0.

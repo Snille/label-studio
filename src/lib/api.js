@@ -23,6 +23,9 @@ export async function api(path, { method = 'GET', body, apiKey = key } = {}) {
   return data;
 }
 
+// A raw response with the key, for binary content such as pictures.
+export const authorizedFetch = path => fetch(`/api/v1${path}`, { headers: { 'x-api-key': key } });
+
 // A Studio key must be valid and have the designer role. Publishing a version that does not exist answers 404 for a
 // designer and 403 for any other key, and changes nothing.
 export async function checkKey(candidate) {

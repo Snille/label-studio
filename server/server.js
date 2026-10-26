@@ -20,14 +20,19 @@ const allowed = [
   ['GET', /^\/api\/v1\/jobs\/[a-f0-9-]{36}$/],
   ['POST', /^\/api\/v1\/(templates|previews|jobs)$/],
   ['POST', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}\/versions\/\d{1,6}\/(publish|archive)$/],
-  ['DELETE', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}$/]
+  ['DELETE', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}$/],
+  ['GET', /^\/api\/v1\/assets(\/[a-f0-9]{12}\/content)?$/],
+  ['POST', /^\/api\/v1\/assets$/],
+  ['DELETE', /^\/api\/v1\/assets\/[a-f0-9]{12}$/]
 ];
+// A picture upload is up to 2 MB, about 2.7 MB as base64 in JSON.
+const bodyLimit = path => path === '/api/v1/assets' ? 3 * 1024 * 1024 : maxBody;
 
-async function readBody(req) {
+async function readBody(req, limit) {
   const chunks = []; let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > maxBody) return null;
+    if (size > limit) return null;
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);
@@ -42,7 +47,7 @@ export function createApp({ env = process.env, dist = fileURLToPath(new URL('../
   async function forward(req, res, path, search) {
     let body;
     if (req.method === 'POST') {
-      body = await readBody(req);
+      body = await readBody(req, bodyLimit(path));
       if (body === null) return json(res, { error: 'Request body is too large.' }, 413);
     }
     // Only the key and the content type go on; the browser origin stays here, so label-service sees a server call.

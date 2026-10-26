@@ -84,6 +84,22 @@ test('refuses large bodies without forwarding them', async () => {
   } finally { app.close(); }
 });
 
+test('forwards picture uploads up to 3 MB and picture bytes unchanged', async () => {
+  const calls = [], png = Buffer.from([137, 80, 78, 71, 1, 2, 3, 255]);
+  const app = await start(async (url, init = {}) => {
+    calls.push({ url, ...init });
+    return url.endsWith('/content') ? new Response(png, { headers: { 'content-type': 'image/png' } }) : new Response('{"id":"abcdefabcdef"}', { status: 201 });
+  });
+  try {
+    const upload = await fetch(`${app.base}/api/v1/assets`, { method: 'POST', headers: { 'x-api-key': key, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'logo', data: 'A'.repeat(2.5 * 1024 * 1024) }) });
+    assert.equal(upload.status, 201); assert.ok(Buffer.from(calls[0].body).length > 2.5 * 1024 * 1024);
+    const content = await fetch(`${app.base}/api/v1/assets/abcdefabcdef/content`, { headers: { 'x-api-key': key } });
+    assert.equal(content.headers.get('content-type'), 'image/png'); assert.ok(Buffer.from(await content.arrayBuffer()).equals(png));
+    assert.equal((await fetch(`${app.base}/api/v1/assets/abcdefabcdef`, { method: 'DELETE', headers: { 'x-api-key': key } })).status, 201);
+    assert.equal((await fetch(`${app.base}/api/v1/assets/abc`, { method: 'DELETE', headers: { 'x-api-key': key } })).status, 403);
+  } finally { app.close(); }
+});
+
 test('reports a lost answer as 502 with a job-check hint', async () => {
   const app = await start(async () => { throw new Error('socket hang up'); });
   try {

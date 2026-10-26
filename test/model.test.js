@@ -161,3 +161,12 @@ test('barcodes take part in fields, and new barcode, QR and date objects have us
   assert.deepEqual(problems({ ...doc, objects: [{ ...bar, data: ' ' }] }), ['Give each barcode its data.']);
   assert.equal(formatDate(new Date(2026, 0, 5, 7, 9), 'dd.MM.yy HH:mm'), '05.01.26 07:09');
 });
+
+test('a new image object asks for its picture before saving or previewing', () => {
+  const canvas = { w: 57, h: 32 }, image = newObject('image', { x: 2, y: 2 }, canvas);
+  assert.deepEqual([image.type, image.asset, image.w, image.h], ['image', '', 25, 15]);
+  const doc = { id: 'pic', name: 'Pic', media: ['w162h90'], orientation: 'landscape', fields: {}, objects: [image] };
+  assert.deepEqual(problems(doc), ['Choose a picture for each image object.']);
+  assert.deepEqual(problems({ ...doc, objects: [{ ...image, asset: 'abcdefabcdef' }] }), []);
+  assert.equal(toDefinition({ ...doc, objects: [{ ...image, asset: 'abcdefabcdef', mode: 'dither' }] }).objects[0].asset, 'abcdefabcdef');
+});

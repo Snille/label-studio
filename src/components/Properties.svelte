@@ -1,5 +1,6 @@
 <script>
   import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate } from '../lib/model.js';
+  import { pictures } from '../lib/pictures.svelte.js';
 
   let { editor, focusText = 0 } = $props();
   let textArea = $state();
@@ -13,6 +14,16 @@
   const optional = value => Number.isFinite(value) ? value : undefined;
 
   $effect(() => { if (focusText && textArea) { textArea.focus(); textArea.select(); } });
+
+  let uploading = $state(false), uploadError = $state('');
+  $effect(() => { if (item?.type === 'image' && !pictures.loaded) pictures.load(); });
+  async function upload(event) {
+    const file = event.currentTarget.files?.[0]; event.currentTarget.value = '';
+    if (!file) return;
+    uploading = true; uploadError = '';
+    try { const record = await pictures.upload(file); set('asset', record.id); } catch (e) { uploadError = e.message; }
+    uploading = false;
+  }
 
   // Puts {{name}} where the cursor is in the text or data box.
   function insertField(event, key, element) {
@@ -177,6 +188,37 @@
         </label>
         <p class="wide muted small">The bars fill the box width in whole printer dots (at least 2 per bar). Leave some space on each side for scanning.</p>
       {/if}
+    {:else if item.type === 'image'}
+      <label class="wide">Picture
+        <select value={item.asset || ''} onchange={e => set('asset', e.currentTarget.value)}>
+          <option value="" disabled>Choose a picture…</option>
+          {#each pictures.list as p (p.id)}<option value={p.id}>{p.name} ({p.width} × {p.height})</option>{/each}
+        </select>
+      </label>
+      <label class="wide upload">Upload a picture (PNG, JPEG or SVG, at most 2 MB)
+        <input type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" disabled={uploading} onchange={upload}>
+      </label>
+      {#if uploading}<p class="wide muted small">Uploading…</p>{/if}
+      {#if uploadError}<p class="wide error">{uploadError}</p>{/if}
+      {#if pictures.error}<p class="wide error">{pictures.error}</p>{/if}
+      <label>Fit
+        <select value={item.fit || 'contain'} onchange={e => set('fit', e.currentTarget.value === 'contain' ? undefined : e.currentTarget.value)}>
+          <option value="contain">Keep proportions</option><option value="stretch">Stretch to the box</option>
+        </select>
+      </label>
+      <label>Black and white
+        <select value={item.mode || 'threshold'} onchange={e => set('mode', e.currentTarget.value === 'threshold' ? undefined : e.currentTarget.value)}>
+          <option value="threshold">Threshold (logos)</option><option value="dither">Dither (photos, shades)</option>
+        </select>
+      </label>
+      <label class="wide">Threshold: {item.threshold ?? 128} — higher makes more black
+        <input type="range" min="1" max="254" value={item.threshold ?? 128} onchange={e => set('threshold', e.currentTarget.valueAsNumber === 128 ? undefined : e.currentTarget.valueAsNumber)}>
+      </label>
+      <div class="wide checks">
+        <label><input type="checkbox" checked={Boolean(item.invert)} onchange={e => set('invert', e.currentTarget.checked || undefined)}> Invert (white on black)</label>
+      </div>
+      {@render placement('middle')}
+      <p class="wide muted small">The editor shows the picture in grey. The preview shows the black and white dots that print.</p>
     {:else if item.type === 'stack'}
       <p class="wide muted">Free lines from the field {item.items}. Edit the lines as test data in the Fields tab.</p>
     {:else}

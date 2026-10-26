@@ -14,7 +14,7 @@
   let saving = $state(false);
   let areaW = $state(800), areaH = $state(600);
 
-  const tools = [['select', 'Select', '↖'], ['text', 'Text', 'T'], ['line', 'Line', '╱'], ['rect', 'Rectangle', '▭'], ['ellipse', 'Ellipse', '◯'], ['barcode', 'Barcode', '|||'], ['qr', 'QR or Data Matrix code', '▦'], ['date', 'Date and time', '◷']];
+  const tools = [['select', 'Select', '↖'], ['text', 'Text', 'T'], ['line', 'Line', '╱'], ['rect', 'Rectangle', '▭'], ['ellipse', 'Ellipse', '◯'], ['barcode', 'Barcode', '|||'], ['qr', 'QR or Data Matrix code', '▦'], ['date', 'Date and time', '◷'], ['image', 'Picture', '▨']];
   const saveProblems = $derived(problems(editor.doc));
   const one = $derived(editor.selected.length > 0);
 
@@ -57,7 +57,7 @@
 
   function selectObject(index) { editor.selected = [editor.doc.objects[index].uid]; tab = 'object'; }
 
-  const keys = { v: 'select', t: 'text', l: 'line', r: 'rect', e: 'ellipse', b: 'barcode', q: 'qr', d: 'date' };
+  const keys = { v: 'select', t: 'text', l: 'line', r: 'rect', e: 'ellipse', b: 'barcode', q: 'qr', d: 'date', i: 'image' };
   function keydown(event) {
     const target = event.target;
     if (target.closest?.('input, textarea, select, [contenteditable]')) return;

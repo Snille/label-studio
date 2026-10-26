@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { api } from '../lib/api.js';
+  import PictureList from './PictureList.svelte';
   import { toEditor, blankTemplate, editMedia, naturalOrientation, templateId } from '../lib/model.js';
 
   let { formats, onopen } = $props();
@@ -127,6 +128,7 @@
         {/each}
       </tbody>
     </table>
+    <PictureList />
   </section>
 
   <aside>

@@ -4,7 +4,7 @@
 export const ptPerMm = 72 / 25.4;
 export const fontFamilies = ['Liberation Sans', 'Liberation Serif', 'Liberation Mono', 'DejaVu Sans Condensed'];
 export const italicFamilies = ['Liberation Sans'];
-export const objectTypes = ['text', 'line', 'rect', 'ellipse', 'barcode', 'date'];
+export const objectTypes = ['text', 'line', 'rect', 'ellipse', 'barcode', 'date', 'image'];
 export const symbologies = [['code128', 'Code 128'], ['ean13', 'EAN-13'], ['qrcode', 'QR code'], ['datamatrix', 'Data Matrix']];
 export const twoDimensional = symbology => symbology === 'qrcode' || symbology === 'datamatrix';
 export const dateFormats = ['yyyy-MM-dd', 'yyyy-MM-dd HH:mm', 'dd.MM.yyyy', 'dd/MM/yy', 'HH:mm'];
@@ -123,6 +123,7 @@ export function newObject(type, at, canvas) {
   if (type === 'line') return { ...base, w: clean(Math.min(30, canvas.w - at.x)), h: 0, stroke: 0.3 };
   if (type === 'barcode') return { ...base, ...fit(Math.min(40, canvas.w * 0.7), 12), symbology: 'code128', data: '{{code}}' };
   if (type === 'qr') return { ...base, type: 'barcode', ...fit(16, 16), symbology: 'qrcode', data: '{{code}}' };
+  if (type === 'image') return { ...base, ...fit(Math.min(25, canvas.w * 0.5), Math.min(15, canvas.h * 0.5)), asset: '' };
   if (type === 'date') return { ...base, ...fit(Math.min(30, canvas.w * 0.5), 5), format: dateFormats[0], font: fontFamilies[0], size: 8, align: 'left', valign: 'top' };
   return { ...base, ...fit(20, 12), stroke: 0.3, fill: 'none' };
 }
@@ -238,5 +239,6 @@ export function problems(doc) {
   if (new Set(ids).size !== ids.length) list.push('Object names must be unique.');
   for (const name of doc.objects.flatMap(o => placeholders(placeholderText(o)))) if (!fieldName.test(name)) list.push(`{{${name}}} is not a valid field name.`);
   if (doc.objects.some(o => o.type === 'barcode' && !String(o.data || '').trim())) list.push('Give each barcode its data.');
+  if (doc.objects.some(o => o.type === 'image' && !o.asset)) list.push('Choose a picture for each image object.');
   return [...new Set(list)];
 }

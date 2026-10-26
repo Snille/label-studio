@@ -1,6 +1,11 @@
 <script>
   import { ptPerMm as K, snapAxis, snapTargets, sampleValues, fillText, bounds, formatDate, twoDimensional } from '../lib/model.js';
   import { sketchLinear, sketchMatrix } from '../lib/sketch.js';
+  import { pictures } from '../lib/pictures.svelte.js';
+
+  // contain keeps the picture's proportions at its alignment in the box; stretch fills the box.
+  const aspect = item => item.fit === 'stretch' ? 'none'
+    : `x${{ left: 'Min', center: 'Mid', right: 'Max' }[item.align || 'center']}Y${{ top: 'Min', middle: 'Mid', bottom: 'Max' }[item.valign || 'middle']} meet`;
 
   const rectPath = rects => rects.map(r => `M${r.x * K} ${r.y * K}h${r.w * K}v${r.h * K}h${-r.w * K}z`).join('');
   const shownText = item => item.type === 'stack' ? fillText(item.items, values)
@@ -181,6 +186,18 @@
               </div>
             </foreignObject>
             <rect class="hit" x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} />
+          {:else if item.type === 'image'}
+            {#if item.asset}
+              {#await pictures.url(item.asset) then href}
+                <image {href} x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} preserveAspectRatio={aspect(item)} class="picture" class:inverted={item.invert} />
+              {:catch}
+                <text x={(item.x + 1) * K} y={(item.y + 4) * K} font-size="8" fill="#c0392b">Picture missing</text>
+              {/await}
+            {:else}
+              <rect x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} class="empty-picture" />
+              <text x={(item.x + item.w / 2) * K} y={(item.y + item.h / 2) * K} font-size="7" text-anchor="middle" dominant-baseline="middle" fill="#666">Choose a picture</text>
+            {/if}
+            <rect class="hit" x={item.x * K} y={item.y * K} width={item.w * K} height={item.h * K} />
           {:else if item.type === 'barcode'}
             {@const data = editor.showFieldNames ? item.data : fillText(item.data, values)}
             {#if twoDimensional(item.symbology)}
@@ -250,6 +267,10 @@
   .grid line { stroke: var(--grid); stroke-width: 0.25; }
   .text { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; pointer-events: none; }
   .hit { fill: transparent; stroke: transparent; cursor: move; }
+  /* The editor shows the picture in grey; the label-service preview shows the black and white dots. */
+  .picture { filter: grayscale(1); }
+  .picture.inverted { filter: grayscale(1) invert(1); }
+  .empty-picture { fill: #f2f2f2; stroke: #999; stroke-width: 0.5; stroke-dasharray: 2 2; }
   line.hit { stroke: transparent; }
   .object.warned :global(.hit) { stroke: var(--danger); stroke-width: 1.2; stroke-dasharray: 3 2; }
   .selected { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-dasharray: 3 2; pointer-events: none; vector-effect: non-scaling-stroke; }
