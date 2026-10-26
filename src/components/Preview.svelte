@@ -1,6 +1,6 @@
 <script>
   import { api } from '../lib/api.js';
-  import { problems, sampleValues } from '../lib/model.js';
+  import { problems, sampleValues, requestId as newRequestId } from '../lib/model.js';
 
   let { editor, formats, printer, onselect } = $props();
   let result = $state(null);
@@ -38,8 +38,9 @@
   // Printing makes a fresh preview (a token lives ten minutes) and sends exactly one job with a new request id.
   async function print() {
     printing = { step: 'sending' };
-    const requestId = crypto.randomUUID();
+    let requestId;
     try {
+      requestId = newRequestId();
       const definition = editor.definition;
       const fresh = await api('/previews', { method: 'POST', body: { template: definition, fields: sampleValues(definition.fields), printer, reference: `Label Studio: ${definition.id}` } });
       if (!fresh.printable) { printing = { step: 'error', message: 'The label does not fit any more. Check the warnings.' }; return; }

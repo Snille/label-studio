@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
-  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject } from '../src/lib/model.js';
+  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId } from '../src/lib/model.js';
 
 // The same numbers label-service uses for its formats.
 const s0722430 = { key: 'w154h286', widthPt: 154, heightPt: 286, widthMm: 54, heightMm: 101 };
@@ -125,4 +125,16 @@ test('save problems are found before label-service sees them', () => {
   assert.equal(problems(doc).length, 3);
   const line = newObject('line', { x: 50, y: 10 }, canvasSize(s0722540));
   assert.equal(line.h, 0); near(line.w, 7.15);
+});
+
+test('print request ids are version 4 UUIDs that label-service accepts, without crypto.randomUUID', () => {
+  // label-service checks /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/; Studio runs on plain http,
+  // where browsers do not offer crypto.randomUUID.
+  const saved = crypto.randomUUID;
+  Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+  try {
+    const ids = new Set(Array.from({ length: 200 }, requestId));
+    assert.equal(ids.size, 200);
+    for (const id of ids) assert.match(id, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+  } finally { Object.defineProperty(crypto, 'randomUUID', { value: saved, configurable: true }); }
 });

@@ -1,5 +1,10 @@
 # History
 
+## 0.1.1 - 2026-10-26
+
+- Fixed: printing stopped at "Sending…" on the live LAN address. The request id came from `crypto.randomUUID`, which browsers offer only on https and localhost pages; on plain http the call threw before anything was sent, outside the error handling. Studio now makes the version 4 UUID with `crypto.getRandomValues`, and every step of a print, including the id, is inside the error handling. Nothing reached label-service; no label was printed. A test makes ids with `crypto.randomUUID` removed.
+- Verified on a plain-http LAN address (not a secure context) against a printer-less label-service: the job request arrives and label-service's answer is shown.
+
 ## 0.1.0 - 2026-10-26
 
 Phase 1 of the design report: the first Label Studio, on top of label-service 0.5.0.

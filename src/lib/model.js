@@ -35,6 +35,15 @@ export const placeholders = text => [...String(text || '').matchAll(/\{\{\s*([^}
 export const fieldName = /^[a-zA-Z][a-zA-Z0-9_]{0,39}$/;
 export const templateId = /^[a-z0-9][a-z0-9-]{1,63}$/;
 
+// A version 4 UUID for a print request. crypto.randomUUID exists only on https and localhost pages, and Studio is
+// served over plain http on the LAN; crypto.getRandomValues works everywhere.
+export function requestId() {
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+
 let counter = 0;
 export const uid = () => `o${Date.now().toString(36)}${(counter++).toString(36)}`;
 
