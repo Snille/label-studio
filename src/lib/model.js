@@ -79,8 +79,9 @@ export function toEditor(definition, media) {
     const box = resolveBox(item, canvas);
     return { ...structuredClone(rest), uid: uid(), x: clean(box.x), y: clean(box.y), w: clean(box.w), h: clean(box.h) };
   });
+  // A template for any roll is edited on one roll (media holds that roll) and saved again for any roll.
   return { id: definition.id, name: definition.name, description: definition.description || '', media: definition.media.includes('*') ? [media.key] : [...definition.media],
-    orientation, printDensity: definition.printDensity || '', fields: structuredClone(definition.fields || {}), objects };
+    anyRoll: definition.media.includes('*'), orientation, printDensity: definition.printDensity || '', fields: structuredClone(definition.fields || {}), objects };
 }
 
 // Fields used in text that are not declared yet become plain text fields, so a placeholder always has a field.
@@ -95,12 +96,18 @@ export function syncFields(doc) {
 
 export const unusedFields = doc => Object.keys(doc.fields).filter(name => !doc.objects.some(item => placeholders(placeholderText(item)).includes(name)));
 
-export function toDefinition(doc) {
+// canvas: the readable label the document is edited on. A template for any roll saves its media as "*" and every
+// position and size as a share of that canvas ("12.5%"), so its objects follow the size of each roll; font sizes,
+// line widths and corner radii stay in points and millimetres.
+export function toDefinition(doc, canvas) {
+  const share = doc.anyRoll && canvas?.w > 0 && canvas?.h > 0;
+  const pct = (value, side) => `${+(value / side * 100).toFixed(4)}%`;
   const objects = doc.objects.map(({ uid: _, x, y, w, h, ...rest }) => {
     const props = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined && v !== '' && !(Array.isArray(v) && !v.length)));
-    return { ...props, x: clean(x), y: clean(y), w: clean(w), h: clean(h) };
+    return share ? { ...props, x: pct(x, canvas.w), y: pct(y, canvas.h), w: pct(w, canvas.w), h: pct(h, canvas.h) }
+      : { ...props, x: clean(x), y: clean(y), w: clean(w), h: clean(h) };
   });
-  const definition = { id: doc.id, name: doc.name.trim(), media: [...doc.media], orientation: doc.orientation, fields: syncFields(doc), objects };
+  const definition = { id: doc.id, name: doc.name.trim(), media: share ? ['*'] : [...doc.media], orientation: doc.orientation, fields: syncFields(doc), objects };
   if (doc.description?.trim()) definition.description = doc.description.trim();
   if (doc.printDensity) definition.printDensity = doc.printDensity;
   return definition;

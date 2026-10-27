@@ -23,7 +23,7 @@ export class Editor {
   history = new History();
 
   canvas = $derived(this.doc && this.media ? canvasSize(this.media, this.doc.orientation) : { w: 0, h: 0 });
-  definition = $derived(this.doc ? toDefinition(this.doc) : null);
+  definition = $derived(this.doc ? toDefinition(this.doc, this.canvas) : null);
   dirty = $derived(this.definition ? JSON.stringify(this.definition) !== this.saved : false);
   selection = $derived(this.doc ? this.doc.objects.filter(o => this.selected.includes(o.uid)) : []);
 
@@ -31,7 +31,7 @@ export class Editor {
   load(doc, media, source = null) {
     this.doc = doc; this.media = media; this.source = source; this.selected = []; this.tool = 'select';
     this.history = new History(); this.history.record(snapshot(doc)); this.syncHistory();
-    this.saved = source ? JSON.stringify(toDefinition(doc)) : '';
+    this.saved = source ? JSON.stringify(toDefinition(doc, this.canvas)) : '';
   }
   markSaved(source) { this.source = source; this.saved = JSON.stringify(this.definition); }
   syncHistory() { this.canUndo = this.history.canUndo; this.canRedo = this.history.canRedo; }

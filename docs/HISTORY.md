@@ -1,5 +1,10 @@
 # History
 
+## 0.9.0 - 2026-10-27
+
+- Any roll: a checkbox in the template panel saves the template with `media: ["*"]` and every position and size as a share of the label it is drawn on, so it prints on every roll (the built-in templates work the same way). Opening it again gives millimetres on the roll chosen to draw on; the panel says that font sizes, line widths and corners do not scale. Before, Studio always saved for one roll, and an any-roll template opened in the editor became a one-roll template.
+- The design guide is unchanged: it already describes `["*"]` with percentages for MCP clients.
+
 ## 0.8.0 - 2026-10-27
 
 - Batch print sends the chosen rows as one job (label-service 0.11.0 `rows`), so the labels come out in one run as with DYMO Connect, instead of one job per label 10 seconds apart. Decision B8 in the design report is changed.

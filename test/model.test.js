@@ -201,3 +201,20 @@ test('rotation: angles, snapping, turned bounds and resizing in the frame of the
   near(grown.w, 26); const before = bounds([box]), after = bounds([{ ...box, ...grown }]);
   near(after.y, before.y); near(after.h, 26); near(after.x, before.x);
 });
+
+test('a template for any roll saves media "*" and positions as shares of the label, and opens again in millimetres', () => {
+  const canvas = canvasSize(s0722540, 'landscape'), doc = toEditor({ id: 'tag', name: 'Tag', media: ['w162h90'], orientation: 'landscape', fields: {},
+    objects: [{ id: 't', type: 'text', x: 5.7, y: 3.2, w: 45.6, h: 8, text: 'A', rotate: 90 }, { type: 'line', x: 2, y: 20, w: 10, h: 0 }] }, s0722540);
+  assert.equal(doc.anyRoll, false); assert.deepEqual(toDefinition(doc, canvas).media, ['w162h90']); assert.equal(toDefinition(doc, canvas).objects[0].x, 5.7);
+  doc.anyRoll = true;
+  const saved = toDefinition(doc, canvas), [t, line] = saved.objects;
+  assert.deepEqual(saved.media, ['*']);
+  assert.equal(t.x, `${+(5.7 / canvas.w * 100).toFixed(4)}%`); assert.equal(t.h, `${+(8 / canvas.h * 100).toFixed(4)}%`); assert.equal(t.rotate, 90);
+  assert.equal(line.h, '0%');
+  // Opened on another roll, the shares become that roll's millimetres.
+  const other = toEditor(saved, s0722430), big = canvasSize(s0722430, 'landscape');
+  assert.equal(other.anyRoll, true); assert.deepEqual(other.media, ['w154h286']);
+  near(other.objects[0].x, 5.7 / canvas.w * big.w); near(other.objects[0].w, 45.6 / canvas.w * big.w);
+  // Millimetres are kept to 0.01 mm in the editor, so a round trip moves a share by far less than a printer dot.
+  toDefinition(other, big).objects.forEach((o, i) => near(parseFloat(o.x), parseFloat(saved.objects[i].x), 0.01));
+});
