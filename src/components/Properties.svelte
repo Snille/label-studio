@@ -1,5 +1,5 @@
 <script>
-  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate, pictureDefaults, normalAngle } from '../lib/model.js';
+  import { fontFamilies, italicFamilies, fieldName, symbologies, symbologyHelp, twoDimensional, dateFormats, formatDate, pictureDefaults, normalAngle } from '../lib/model.js';
   import { pictures } from '../lib/pictures.svelte.js';
 
   let { editor, focusText = 0 } = $props();
@@ -169,7 +169,7 @@
       <label class="wide">Data — use {'{{field}}'} for values from other systems
         <input bind:this={dataInput} bind:value={item.data} onchange={commit}>
       </label>
-      {#if item.symbology === 'ean13'}<p class="wide muted small">12 digits; label-service adds the check digit. 13 digits must have the right check digit.</p>{/if}
+      {#if symbologyHelp[item.symbology]}<p class="wide muted small">{symbologyHelp[item.symbology]}</p>{/if}
       {@render fieldPicker('data', dataInput)}
       {#if twoDimensional(item.symbology)}
         {#if item.symbology === 'qrcode'}

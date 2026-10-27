@@ -5,7 +5,15 @@ export const ptPerMm = 72 / 25.4;
 export const fontFamilies = ['Liberation Sans', 'Liberation Serif', 'Liberation Mono', 'DejaVu Sans Condensed'];
 export const italicFamilies = ['Liberation Sans'];
 export const objectTypes = ['text', 'line', 'rect', 'ellipse', 'barcode', 'date', 'image'];
-export const symbologies = [['code128', 'Code 128'], ['ean13', 'EAN-13'], ['qrcode', 'QR code'], ['datamatrix', 'Data Matrix']];
+export const symbologies = [['code128', 'Code 128'], ['code39', 'Code 39'], ['ean13', 'EAN-13'], ['ean8', 'EAN-8'], ['upca', 'UPC-A'], ['itf14', 'ITF-14'], ['qrcode', 'QR code'], ['datamatrix', 'Data Matrix']];
+// What the data of each code must be; label-service adds the check digit of the GS1 codes.
+export const symbologyHelp = {
+  code39: 'Digits, capital letters, spaces and - . $ / + %.',
+  ean13: '12 digits; label-service adds the check digit. 13 digits must have the right check digit.',
+  ean8: '7 digits; label-service adds the check digit. 8 digits must have the right check digit.',
+  upca: '11 digits; label-service adds the check digit. 12 digits must have the right check digit.',
+  itf14: '13 digits; label-service adds the check digit. 14 digits must have the right check digit. Leave room on both sides.'
+};
 export const twoDimensional = symbology => symbology === 'qrcode' || symbology === 'datamatrix';
 // label-service's defaults for a picture's black and white conversion (0.9.1).
 export const pictureDefaults = mode => mode === 'dither' ? { threshold: 140, lighten: 15 } : { threshold: 128, lighten: 0 };

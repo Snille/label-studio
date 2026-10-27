@@ -2,7 +2,9 @@
 
 ## 0.10.0 - 2026-10-27
 
-Phase 3: counters and PDF pages.
+Phase 3: counters, PDF pages and more barcodes.
+
+- The barcode list has Code 39, EAN-8, UPC-A and ITF-14 (label-service 0.12.0), with a short note on the data each one takes; the design guide lists them for MCP clients.
 
 - Print PDF view: a PDF page (or a PNG or JPEG) prints on the loaded roll without a template. The page is uploaded as a picture through label-service 0.12.0, shown so a part can be marked by dragging, then cropped by label-service and placed in an unsaved one-picture design that fills the label (turned a quarter when that makes it larger, 1 mm margin), previewed and printed once with the usual fresh preview and request id. The pictures made for it are deleted afterwards. Checked in a browser against label-service 0.12.0 with poppler and no printer: a test A4 page with a shipping label drawn, the label marked and cropped, the preview filled the 102 x 210 mm label, the print stopped with the service's error, and Done left no pictures behind.
 - The picture upload in the library and the editor takes PDF files (first page). The MCP tool `upload_asset` takes `page` and `crop`, and the design guide mentions them.
