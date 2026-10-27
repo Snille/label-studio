@@ -1,5 +1,5 @@
 <script>
-  import { ptPerMm as K, snapAxis, snapTargets, sampleValues, fillText, bounds, formatDate, twoDimensional } from '../lib/model.js';
+  import { ptPerMm as K, snapAxis, snapTargets, sampleValues, fillText, bounds, formatDate, twoDimensional, snapAngle, normalAngle, unturn, placeTurned } from '../lib/model.js';
   import { sketchLinear, sketchMatrix } from '../lib/sketch.js';
   import { pictures } from '../lib/pictures.svelte.js';
 
@@ -59,7 +59,7 @@
   function handleDown(event, item, handle) {
     if (event.button !== 0) return;
     event.stopPropagation();
-    drag = { kind: 'resize', uid: item.uid, handle, start: point(event), orig: { x: item.x, y: item.y, w: item.w, h: item.h }, moved: false };
+    drag = { kind: handle === 'rotate' ? 'rotate' : 'resize', uid: item.uid, handle, start: point(event), orig: { x: item.x, y: item.y, w: item.w, h: item.h, rotate: item.rotate || 0 }, moved: false };
     svgEl.setPointerCapture(event.pointerId);
   }
 
@@ -77,7 +77,16 @@
       return;
     }
     const o = drag.orig, item = editor.doc.objects.find(i => i.uid === drag.uid);
+    if (drag.kind === 'rotate') {
+      // The handle points up from the centre at 0 degrees; the angle follows the pointer around the centre.
+      const cx = o.x + o.w / 2, cy = o.y + o.h / 2, raw = Math.atan2(p.y - cy, p.x - cx) * 180 / Math.PI + 90;
+      editor.update(item.uid, { rotate: normalAngle(snapAngle(raw, { free: event.altKey, steps: event.shiftKey })) });
+      return;
+    }
+    // A rotated object is resized in its own frame, without snapping to the label's straight edges.
+    const [ldx, ldy] = unturn(dx, dy, o.rotate), turned = Boolean(o.rotate);
     const edge = (value, targets, axis) => {
+      if (turned) return value;
       const s = snapAxis(value, 0, targets, opts);
       if (s.guide !== null) guides = [...guides.filter(g => g.axis !== axis), { axis, at: s.guide }];
       return s.value;
@@ -85,30 +94,31 @@
     guides = [];
     if (item.type === 'line') {
       let x1 = o.x, y1 = o.y, x2 = o.x + o.w, y2 = o.y + o.h;
-      let nx = edge((drag.handle === 'p1' ? x1 : x2) + dx, tx, 'x'), ny = edge((drag.handle === 'p1' ? y1 : y2) + dy, ty, 'y');
+      let nx = edge((drag.handle === 'p1' ? x1 : x2) + ldx, tx, 'x'), ny = edge((drag.handle === 'p1' ? y1 : y2) + ldy, ty, 'y');
       const [ax, ay] = drag.handle === 'p1' ? [x2, y2] : [x1, y1];
       if (event.shiftKey) {
         // Keep the line horizontal, vertical or at 45 degrees.
         const ddx = nx - ax, ddy = ny - ay, angle = Math.round(Math.atan2(ddy, ddx) / (Math.PI / 4)) * (Math.PI / 4), len = Math.hypot(ddx, ddy);
         nx = +(ax + Math.cos(angle) * len).toFixed(2); ny = +(ay + Math.sin(angle) * len).toFixed(2);
       }
-      if (drag.handle === 'p1') editor.update(item.uid, { x: nx, y: ny, w: +(x2 - nx).toFixed(2), h: +(y2 - ny).toFixed(2) });
-      else editor.update(item.uid, { w: +(nx - x1).toFixed(2), h: +(ny - y1).toFixed(2) });
+      const next = drag.handle === 'p1' ? { x: nx, y: ny, w: +(x2 - nx).toFixed(2), h: +(y2 - ny).toFixed(2) } : { x: x1, y: y1, w: +(nx - x1).toFixed(2), h: +(ny - y1).toFixed(2) };
+      editor.update(item.uid, turned ? placeTurned(o, next, o.rotate) : next);
       return;
     }
     let l = o.x, r = o.x + o.w, t = o.y, b = o.y + o.h;
     const h = drag.handle;
-    if (h.includes('w')) l = Math.min(edge(l + dx, tx, 'x'), r - 0.5);
-    if (h.includes('e')) r = Math.max(edge(r + dx, tx, 'x'), l + 0.5);
-    if (h.includes('n')) t = Math.min(edge(t + dy, ty, 'y'), b - 0.5);
-    if (h.includes('s')) b = Math.max(edge(b + dy, ty, 'y'), t + 0.5);
+    if (h.includes('w')) l = Math.min(edge(l + ldx, tx, 'x'), r - 0.5);
+    if (h.includes('e')) r = Math.max(edge(r + ldx, tx, 'x'), l + 0.5);
+    if (h.includes('n')) t = Math.min(edge(t + ldy, ty, 'y'), b - 0.5);
+    if (h.includes('s')) b = Math.max(edge(b + ldy, ty, 'y'), t + 0.5);
     if (event.shiftKey && h.length === 2 && o.h > 0) {
       // Corner handles keep the proportions with Shift.
       const ratio = o.w / o.h, w = r - l, hgt = w / ratio;
       if (h.includes('n')) t = b - hgt; else b = t + hgt;
       guides = [];
     }
-    editor.update(item.uid, { x: +l.toFixed(2), y: +t.toFixed(2), w: +(r - l).toFixed(2), h: +(b - t).toFixed(2) });
+    const next = { x: +l.toFixed(2), y: +t.toFixed(2), w: +(r - l).toFixed(2), h: +(b - t).toFixed(2) };
+    editor.update(item.uid, turned ? placeTurned(o, next, o.rotate) : next);
   }
 
   function up() {
@@ -126,6 +136,8 @@
     ? [['p1', item.x, item.y], ['p2', item.x + item.w, item.y + item.h]]
     : [['nw', 0, 0], ['n', 0.5, 0], ['ne', 1, 0], ['e', 1, 0.5], ['se', 1, 1], ['s', 0.5, 1], ['sw', 0, 1], ['w', 0, 0.5]]
       .map(([name, fx, fy]) => [name, item.x + item.w * fx, item.y + item.h * fy]);
+  // Rotated objects are drawn in their own frame, turned about the centre of their box.
+  const turn = item => item.rotate ? `rotate(${item.rotate} ${(item.x + item.w / 2) * K} ${(item.y + item.h / 2) * K})` : undefined;
   const cursors = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', p1: 'move', p2: 'move' };
 
   // Ruler ticks: every millimetre when there is room, longer every 5 and numbered every 10.
@@ -172,7 +184,7 @@
       {#each editor.doc.objects as item, index (item.uid)}
         {@const ink = item.color === 'white' || item.fill === 'white' ? 'white' : 'black'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <g class="object" class:warned={warned.has(objectName(item, index))} onpointerdown={e => objectDown(e, item)}>
+        <g class="object" class:warned={warned.has(objectName(item, index))} transform={turn(item)} onpointerdown={e => objectDown(e, item)}>
           {#if item.type === 'text' || item.type === 'stack' || item.type === 'date'}
             {@const size = fontPt(item.size)}
             <foreignObject x={item.x * K} y={item.y * K} width={Math.max(item.w, 0.1) * K} height={Math.max(item.h, 0.1) * K}>
@@ -238,15 +250,23 @@
       {/each}
 
       {#each editor.selection as item (item.uid)}
-        {@const b = bounds([item])}
-        <rect class="selected" x={b.x * K} y={b.y * K} width={Math.max(b.w, 0.01) * K} height={Math.max(b.h, 0.01) * K} />
-        {#if editor.selected.length === 1}
-          {#each handles(item) as [name, hx, hy] (name)}
+        {@const b = { x: Math.min(item.x, item.x + item.w), y: Math.min(item.y, item.y + item.h), w: Math.abs(item.w), h: Math.abs(item.h) }}
+        <g transform={turn(item)}>
+          <rect class="selected" x={b.x * K} y={b.y * K} width={Math.max(b.w, 0.01) * K} height={Math.max(b.h, 0.01) * K} />
+          {#if editor.selected.length === 1}
+            {#each handles(item) as [name, hx, hy] (name)}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <rect class="handle" style:cursor={cursors[name]} x={hx * K - 4 / z * K} y={hy * K - 4 / z * K} width={8 / z * K} height={8 / z * K}
+                onpointerdown={e => handleDown(e, item, name)} />
+            {/each}
+            <!-- The turning handle sits above the middle of the top edge. Drag it; Shift keeps to 15 degree steps, Alt turns freely. -->
+            <line class="stem" x1={(item.x + item.w / 2) * K} y1={b.y * K} x2={(item.x + item.w / 2) * K} y2={(b.y - 18 / z) * K} />
             <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <rect class="handle" style:cursor={cursors[name]} x={hx * K - 4 / z * K} y={hy * K - 4 / z * K} width={8 / z * K} height={8 / z * K}
-              onpointerdown={e => handleDown(e, item, name)} />
-          {/each}
-        {/if}
+            <circle class="handle turn" cx={(item.x + item.w / 2) * K} cy={(b.y - 18 / z) * K} r={5 / z * K} onpointerdown={e => handleDown(e, item, 'rotate')}>
+              <title>Rotate ({item.rotate || 0}°). Snaps near every 15°; Shift keeps to 15° steps, Alt turns freely.</title>
+            </circle>
+          {/if}
+        </g>
       {/each}
     </svg>
   </div>
@@ -275,5 +295,7 @@
   .object.warned :global(.hit) { stroke: var(--danger); stroke-width: 1.2; stroke-dasharray: 3 2; }
   .selected { fill: none; stroke: var(--accent); stroke-width: 0.9; stroke-dasharray: 3 2; pointer-events: none; vector-effect: non-scaling-stroke; }
   .handle { fill: #fff; stroke: var(--accent); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+  .handle.turn { cursor: grab; fill: var(--accent); }
+  .stem { stroke: var(--accent); stroke-width: 1; vector-effect: non-scaling-stroke; pointer-events: none; }
   .guide { stroke: #e040fb; stroke-width: 0.8; vector-effect: non-scaling-stroke; pointer-events: none; }
 </style>

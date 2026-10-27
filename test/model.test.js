@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
-  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate, pictureDefaults } from '../src/lib/model.js';
+  align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate, pictureDefaults,
+  bounds, normalAngle, snapAngle, unturn, placeTurned } from '../src/lib/model.js';
 
 // The same numbers label-service uses for its formats.
 const s0722430 = { key: 'w154h286', widthPt: 154, heightPt: 286, widthMm: 54, heightMm: 101 };
@@ -181,4 +182,22 @@ test('a print density chosen for the template is kept, and an empty one is left 
 test('the picture defaults shown in the panel match label-service', () => {
   assert.deepEqual(pictureDefaults('dither'), { threshold: 140, lighten: 15 });
   assert.deepEqual(pictureDefaults(undefined), { threshold: 128, lighten: 0 });
+});
+
+test('rotation: angles, snapping, turned bounds and resizing in the frame of the object', () => {
+  assert.equal(normalAngle(0), undefined); assert.equal(normalAngle(360), undefined); assert.equal(normalAngle(270), -90); assert.equal(normalAngle(-450), -90);
+  assert.equal(normalAngle(12.345), 12.35); assert.equal(Math.abs(normalAngle(180)), 180);
+  assert.equal(snapAngle(43), 45); assert.equal(snapAngle(41), 41); assert.equal(snapAngle(41, { steps: true }), 45); assert.equal(snapAngle(44, { free: true }), 44);
+  // A 20 x 4 box turned a quarter stands 4 wide and 20 tall about the same centre.
+  const box = { type: 'text', x: 10, y: 20, w: 20, h: 4, rotate: 90 }, b = bounds([box]);
+  near(b.x, 18); near(b.y, 12); near(b.w, 4); near(b.h, 20);
+  near(bounds([{ ...box, rotate: undefined }]).w, 20);
+  const line = bounds([{ type: 'line', x: 0, y: 5, w: 10, h: 0, rotate: 90 }]);
+  near(line.x, 5); near(line.y, 0); near(line.w, 0); near(line.h, 10);
+  // Dragging right on the label moves down in the frame of an object turned 90 degrees.
+  const [lx, ly] = unturn(3, 0, 90); near(lx, 0); near(ly, -3);
+  // Growing the turned box at its east edge (its bottom on the label) keeps the west edge (its top) in place.
+  const grown = placeTurned(box, { x: 10, y: 20, w: 26, h: 4 }, 90);
+  near(grown.w, 26); const before = bounds([box]), after = bounds([{ ...box, ...grown }]);
+  near(after.y, before.y); near(after.h, 26); near(after.x, before.x);
 });

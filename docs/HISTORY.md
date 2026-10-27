@@ -1,5 +1,12 @@
 # History
 
+## 0.8.0 - 2026-10-27
+
+- Batch print sends the chosen rows as one job (label-service 0.11.0 `rows`), so the labels come out in one run as with DYMO Connect, instead of one job per label 10 seconds apart. Decision B8 in the design report is changed.
+- The owner's paper test of 0.7.0: five box labels from an .xlsx file, columns matched by themselves, all rows checked and shown, all printed right.
+- Objects can be rotated freely in the editor: a round handle above the selection turns it about its centre, snapping near every 15° (Shift keeps to 15° steps, Alt turns freely); the properties take the angle and have buttons for 0°, 90°, 180° and -90°. A rotated object is resized in its own frame, so the edge that is not dragged stays put. Bounds, snapping targets and alignment use the turned corners. A slanted barcode gets a warning. The design guide explains `rotate` for MCP clients.
+- The batch's request id is kept per batch; sending the same batch again asks first and names the earlier job. If the printer stops in the middle, the message says to check the roll and leave out the rows that came out.
+
 ## 0.7.0 - 2026-10-27
 
 Phase 3 starts: batch printing.

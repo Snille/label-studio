@@ -1,5 +1,5 @@
-// Batch printing (decision B8): one row of a sheet becomes one label and one print job with its own request id.
-// Pure functions, no browser APIs, so they are tested in Node.
+// Batch printing: one row of a sheet becomes one label, and the chosen rows print as one job (decision B8 as changed
+// on 2026-10-27). Pure functions, no browser APIs, so they are tested in Node.
 
 import { requestId } from './model.js';
 
@@ -28,8 +28,8 @@ export function rowFields(row, mapping, fields) {
   }));
 }
 
-// A batch is the same template version and the same values in the same order. Its key finds the request ids of an
-// earlier, interrupted run of that batch, so a restart skips the rows that were already sent.
+// A batch is the same template version and the same values in the same order. Its key finds the request id of an
+// earlier run of that batch, so the same batch is never sent twice without asking.
 export function batchKey(template, values) {
   const text = JSON.stringify([template.id, template.version, values]);
   let a = 0x811c9dc5, b = 0x01000193;
@@ -37,7 +37,7 @@ export function batchKey(template, values) {
   return `${(a >>> 0).toString(16).padStart(8, '0')}${(b >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-// Request ids per row, kept from an earlier run when there is one.
+// Request ids, kept from an earlier run when there is one.
 export function requestIds(saved, count) {
   return Array.from({ length: count }, (_, i) => typeof saved?.[i] === 'string' && /^[0-9a-f-]{36}$/.test(saved[i]) ? saved[i] : requestId());
 }

@@ -202,7 +202,7 @@ Tretton frågor att ta ställning till innan koden skrivs; B1–B4 styr resten. 
 | B5 | Får label-service ha npm-paket (i dag noll)? | A: ett fåtal granskade, låsta paket (till exempel `bwip-js` för streckkoder). B: allt egen kod | A: streckkoder och QR är lätt att göra fel i; ett välkänt bibliotek är säkrare | Godkänd |
 | B6 | Ramverk för Studio? | A: Svelte + Vite, redigering direkt i SVG. B: React + canvas-bibliotek (Konva) | A: redigeraren ritar samma SVG som renderaren | Godkänd |
 | B7 | Vad händer med `box`, `location`, `lines`? | A: skrivs om i nya formatet, API:t oförändrat. B: ligger kvar som egen kod | A: en enda layoutmotor att testa | Godkänd |
-| B8 | Serieutskrift (CSV, räknare)? | A: ett jobb per etikett, var och en med eget `requestId`, max antal per batch. B: ett jobb med många sidor | A: dagens skydd gäller per etikett; en Excel-rad blir en etikett och ett jobb | Godkänd |
+| B8 | Serieutskrift (CSV, räknare)? | A: ett jobb per etikett, var och en med eget `requestId`, max antal per batch. B: ett jobb med många sidor | A: dagens skydd gäller per etikett; en Excel-rad blir en etikett och ett jobb | Ändrad 2026-10-27 till B: DYMO-drivrutinen kräver cirka 10 s paus mellan jobb men skriver ut sidorna i ett jobb i ett svep, som DYMO Connect. Dubblettskyddet gäller hela batchen |
 | B9 | Får MCP skriva ut? | A: ja, bara publicerade mallar. B: bara förhandsvisa och spara utkast | A, men MCP-klienten frågar användaren före varje utskrift | Godkänd |
 | B10 | Vilka typsnitt? | A: 3–4 öppna typsnitt i containern (sans, smal sans, mono, serif). B: ladda upp egna | A först, B senare | Godkänd |
 | B11 | Hur läggs nya rullar till? | A: admin lägger till format (mått, CUPS-namn) i Studio. B: som i dag, i koden | A: Studio ska kunna lägga till både nya mallar och nya rullar; rullar bara av admin, med en provutskrift | Godkänd |
@@ -211,7 +211,7 @@ Tretton frågor att ta ställning till innan koden skrivs; B1–B4 styr resten. 
 
 **B1, villkoret.** SVG via `librsvg` klarar allt som dagens PostScript gör (text, linjer, former, bilder, rotation) och mer: valfria TrueType-typsnitt, Unicode och inbäddade bilder. För att visning och utskrift ska bli exakt lika ritas texten som konturer (sökvägar) från typsnittsfilen, inte som SVG-text. SVG-funktioner som filter och skuggor används inte; de behövs inte på en svartvit termoetikett.
 
-**B8, Excel.** Studio läser `.xlsx` eller `.csv` i webbläsaren, och du kopplar kolumner till mallens fält. Studio förhandsvisar alla rader och visar vilka rader som inte får plats. Sedan skickas en batch: en rad blir en etikett och ett jobb, med ett eget `requestId` per rad. Avbryts batchen kan den startas om, och redan utskrivna rader skrivs inte ut igen.
+**B8, Excel.** Studio läser `.xlsx` eller `.csv` i webbläsaren, och du kopplar kolumner till mallens fält. Studio förhandsvisar alla rader och visar vilka rader som inte får plats. Sedan skickas en batch: en rad blir en etikett, och alla valda rader går i ett jobb med ett `requestId` (ändrat 2026-10-27, se B8). Stoppar skrivaren mitt i ser man på rullen vilka etiketter som kom ut, väljer bort dem och skriver ut resten.
 
 ### Nya frågor
 

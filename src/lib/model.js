@@ -156,15 +156,50 @@ export function snapTargets(objects, canvas, axis) {
   const [pos, size, side] = axis === 'x' ? ['x', 'w', canvas.w] : ['y', 'h', canvas.h];
   const targets = [0, side / 2, side];
   for (const item of objects) {
-    const a = Math.min(item[pos], item[pos] + item[size]), b = Math.max(item[pos], item[pos] + item[size]);
+    const box = bounds([item]), a = box[pos], b = box[pos] + box[size];
     targets.push(a, (a + b) / 2, b);
   }
   return targets;
 }
 
-// The box around one or more objects (lines may have a negative width or height).
+// Rotation, as label-service draws it: degrees clockwise about the centre of the object's box. Stored between -180
+// and 180; no rotation is left out of the template.
+export function normalAngle(angle) {
+  const value = +((((+angle || 0) % 360) + 540) % 360 - 180).toFixed(2);
+  return value === 0 ? undefined : value;
+}
+// While turning, an angle near a multiple of 15 degrees snaps to it; Shift keeps to those steps; Alt turns freely.
+export function snapAngle(angle, { free = false, steps = false } = {}) {
+  const near = Math.round(angle / 15) * 15;
+  if (steps) return near;
+  return !free && Math.abs(angle - near) <= 3 ? near : +angle.toFixed(1);
+}
+const turnPoint = (px, py, cx, cy, degrees) => {
+  const a = degrees * Math.PI / 180, cos = Math.cos(a), sin = Math.sin(a);
+  return [cx + (px - cx) * cos - (py - cy) * sin, cy + (px - cx) * sin + (py - cy) * cos];
+};
+// The corners of an object as drawn: a line's two ends or a box's four corners, turned with the object.
+export function corners(item) {
+  const points = item.type === 'line' ? [[item.x, item.y], [item.x + item.w, item.y + item.h]]
+    : [[item.x, item.y], [item.x + item.w, item.y], [item.x + item.w, item.y + item.h], [item.x, item.y + item.h]];
+  if (!item.rotate) return points;
+  const cx = item.x + item.w / 2, cy = item.y + item.h / 2;
+  return points.map(([px, py]) => turnPoint(px, py, cx, cy, item.rotate));
+}
+// A pointer movement in the frame of a rotated object.
+export const unturn = (dx, dy, degrees) => turnPoint(dx, dy, 0, 0, -(degrees || 0));
+// A rotated object resized in its own frame: the new box (x, y, w, h in the frame of the old one) moves so that what
+// was not dragged stays where it was on the label.
+export function placeTurned(old, box, degrees) {
+  const ox = old.x + old.w / 2, oy = old.y + old.h / 2;
+  const [cx, cy] = turnPoint(box.x + box.w / 2, box.y + box.h / 2, ox, oy, degrees || 0);
+  return { x: clean(cx - box.w / 2), y: clean(cy - box.h / 2), w: clean(box.w), h: clean(box.h) };
+}
+
+// The box around one or more objects as drawn (lines may have a negative width or height; rotated objects count
+// with their turned corners).
 export function bounds(objects) {
-  const xs = objects.flatMap(o => [o.x, o.x + o.w]), ys = objects.flatMap(o => [o.y, o.y + o.h]);
+  const points = objects.flatMap(corners), xs = points.map(p => p[0]), ys = points.map(p => p[1]);
   const x = Math.min(...xs), y = Math.min(...ys);
   return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
 }

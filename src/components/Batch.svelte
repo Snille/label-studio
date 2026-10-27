@@ -15,7 +15,7 @@
   let pasted = $state('');
   let error = $state('');
   let checking = $state(false);
-  let run = $state(null);        // { step: 'confirm' | 'printing' | 'done', stop?, message? }
+  let run = $state(null);        // { step: 'confirm' | 'printing' | 'done', ... }
 
   const limit = $derived(formats.batchLimit || 50);
   // Published templates for the loaded roll, and the built-in kinds that a sheet can fill.
@@ -28,7 +28,6 @@
   const selected = $derived(rows.filter(r => r.selected));
   const checked = $derived(selected.length > 0 && selected.every(r => r.check || r.error));
   const blocked = $derived(selected.filter(r => r.error || (r.check && !r.check.printable)));
-  const toPrint = $derived(selected.filter(r => !r.job?.done || r.job.kind !== 'ok'));
 
   onMount(async () => {
     try { templates = (await api('/templates')).templates; } catch (e) { error = e.message; }
@@ -98,42 +97,44 @@
     }
   }
 
-  // Request ids are saved per batch before anything prints, so a stopped or interrupted batch continues where it ended.
+  // The chosen rows print as one job with one label per row (decision B8 as changed on 2026-10-27): the printer runs
+  // them in one go, as DYMO Connect does. The job's request id is kept per batch (same template version, same rows),
+  // so pressing Print twice or reloading never sends the same batch twice without asking.
   const storeKey = key => `label-studio.batch.${key}`;
-  function savedIds(key) { try { return JSON.parse(localStorage.getItem(storeKey(key)) || 'null'); } catch { return null; } }
-  function saveIds(key, ids) { try { localStorage.setItem(storeKey(key), JSON.stringify(ids)); } catch { /* the ids last for this page */ } }
+  function savedId(key) { try { return requestIds(JSON.parse(localStorage.getItem(storeKey(key)) || 'null'), 1)[0]; } catch { return requestIds(null, 1)[0]; } }
+  function saveId(key, id) { try { localStorage.setItem(storeKey(key), JSON.stringify([id])); } catch { /* the id lasts for this page */ } }
+  const currentKey = () => batchKey(template.kind ? { id: `builtin:${template.kind}` } : template, selected.map(r => r.values));
 
+  async function confirm() {
+    const key = currentKey(), id = savedId(key);
+    let earlier = null;
+    try { const job = await api(`/jobs/${id}`); earlier = jobView(job.record, job.status).text; } catch (e) { if (e.status !== 404) { error = e.message; return; } }
+    run = { step: 'confirm', key, id, earlier };
+  }
   async function print() {
-    const key = batchKey(template.kind ? { id: `builtin:${template.kind}` } : template, rows.map(r => r.values));
-    const ids = requestIds(savedIds(key), rows.length); saveIds(key, ids);
-    run = { step: 'printing', stop: false, done: 0, total: toPrint.length };
-    for (const [index, row] of rows.entries()) {
-      if (!row.selected || (row.job?.done && row.job.kind === 'ok')) continue;
-      if (run.stop) { run = { step: 'done', message: 'Stopped. Print again to continue with the remaining rows.' }; return; }
-      const id = ids[index];
-      try {
-        // A row sent in an earlier run is followed, never sent again.
-        let answer = null;
-        try { answer = await api(`/jobs/${id}`); } catch (e) { if (e.status !== 404) throw e; }
-        if (!answer) {
-          const fresh = await api('/previews', { method: 'POST', body: request(row.values, { reference: `Label Studio batch: ${template.id || template.kind} row ${row.line}` }) });
-          if (!fresh.printable) throw new Error('The label does not fit any more. Check the rows again.');
-          answer = { record: await api('/jobs', { method: 'POST', body: { token: fresh.token, requestId: id } }), status: null };
-        }
-        row.job = jobView(answer.record, answer.status);
-        // The next label goes only when this one has ended, so a printer problem stops the batch after one label.
-        for (let i = 0; i < 60 && !row.job.done; i++) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
-          try { const job = await api(`/jobs/${id}`); row.job = jobView(job.record, job.status); } catch { /* ask again */ }
-        }
-        if (row.job.kind !== 'ok' || !row.job.done) { run = { step: 'done', message: `Row ${row.line}: ${row.job.text} The batch stopped.` }; return; }
-        run.done++;
-      } catch (e) {
-        row.error = e.message;
-        run = { step: 'done', message: `Row ${row.line}: ${e.message} The batch stopped.` }; return;
+    const { key, earlier } = run, batch = [...selected];
+    // A batch that was sent before needs a new request id to print again.
+    const id = earlier ? requestIds(null, 1)[0] : run.id; saveId(key, id);
+    run = { step: 'printing', text: `Preparing ${batch.length} labels…` };
+    const mark = view => { for (const row of batch) row.job = view; };
+    try {
+      const fresh = await api('/previews', { method: 'POST', body: request(undefined, {
+        fields: undefined, rows: batch.map(r => r.values), reference: `Label Studio batch: ${template.id || template.kind}, ${batch.length} labels` }) });
+      if (!fresh.printable) {
+        for (const w of fresh.warnings) if (w.row) batch[w.row - 1].error = w.message;
+        run = { step: 'done', kind: 'error', message: 'Some labels do not fit any more. Nothing was printed. Check the rows again.' }; return;
       }
+      let job = { record: await api('/jobs', { method: 'POST', body: { token: fresh.token, requestId: id } }), status: null };
+      let view = jobView(job.record, job.status); mark(view); run = { step: 'printing', text: view.text };
+      for (let i = 0; i < 200 && !view.done; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        try { job = await api(`/jobs/${id}`); view = jobView(job.record, job.status); mark(view); run = { step: 'printing', text: view.text }; } catch { /* ask again */ }
+      }
+      run = view.kind === 'ok' && view.done ? { step: 'done', kind: 'ok', message: `${batch.length} labels printed (CUPS job ${job.record.jobId}).` }
+        : { step: 'done', kind: view.kind, message: `${view.text} Some labels may have printed: check the roll, then leave out the rows that came out and print again.` };
+    } catch (e) {
+      run = { step: 'done', kind: 'error', message: `${e.message} Check the roll before printing again.` };
     }
-    run = { step: 'done', message: `All ${run.total} labels printed.` };
   }
   const summary = values => fields.map(f => values[f.name]).filter(Boolean).join(' · ');
 </script>
@@ -141,7 +142,7 @@
 <main class="batch">
   <section class="steps">
     <h2>Batch print</h2>
-    <p class="muted">One row becomes one label and one print job. Rows that were printed are skipped if the same batch runs again. At most {limit} labels per batch.</p>
+    <p class="muted">One row becomes one label. The chosen rows print as one job and come out in one run. At most {limit} labels per batch.</p>
     {#if error}<p class="error">{error}</p>{/if}
 
     <div class="card">
@@ -214,17 +215,17 @@
         {:else if blocked.length}
           <p class="error">{blocked.length} chosen {blocked.length === 1 ? 'row does' : 'rows do'} not fit or {blocked.length === 1 ? 'has' : 'have'} errors. Fix them in the sheet or leave them out.</p>
         {:else if !run}
-          <button class="primary" disabled={!toPrint.length} onclick={() => { run = { step: 'confirm' }; }}>Print {toPrint.length} labels…</button>
+          <button class="primary" onclick={confirm}>Print {selected.length} labels…</button>
         {/if}
         {#if run?.step === 'confirm'}
-          <p><strong>Print {toPrint.length} labels on paper?</strong></p>
-          <p class="small">Template "{template.name}"{template.version ? ` v${template.version}` : ''}, printer {formats.printer.name}, roll {formats.media.name}. One label at a time; the next starts when the last has printed.</p>
-          <div class="row"><button class="primary" onclick={print}>Print</button><button onclick={() => { run = null; }}>Cancel</button></div>
+          <p><strong>Print {selected.length} labels on paper?</strong></p>
+          {#if run.earlier}<p class="warn">This batch was sent before: {run.earlier} Printing again makes the labels once more.</p>{/if}
+          <p class="small">Template "{template.name}"{template.version ? ` v${template.version}` : ''}, printer {formats.printer.name}, roll {formats.media.name}. All labels go in one print job and come out in one run.</p>
+          <div class="row"><button class="primary" onclick={print}>{run.earlier ? 'Print again' : 'Print'}</button><button onclick={() => { run = null; }}>Cancel</button></div>
         {:else if run?.step === 'printing'}
-          <p>Printing {run.done + 1} of {run.total}…</p>
-          <button onclick={() => { run.stop = true; }} disabled={run.stop}>{run.stop ? 'Stopping after this label…' : 'Stop after this label'}</button>
+          <p>{run.text}</p>
         {:else if run?.step === 'done'}
-          <p>{run.message}</p>
+          <p class={run.kind}>{run.message}</p>
           <button onclick={() => { run = null; }}>Close</button>
         {/if}
       </div>

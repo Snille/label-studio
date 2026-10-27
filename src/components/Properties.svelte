@@ -1,5 +1,5 @@
 <script>
-  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate, pictureDefaults } from '../lib/model.js';
+  import { fontFamilies, italicFamilies, fieldName, symbologies, twoDimensional, dateFormats, formatDate, pictureDefaults, normalAngle } from '../lib/model.js';
   import { pictures } from '../lib/pictures.svelte.js';
 
   let { editor, focusText = 0 } = $props();
@@ -117,6 +117,13 @@
     <label>Y mm<input type="number" step="0.1" bind:value={item.y} onchange={commit}></label>
     <label>{item.type === 'line' ? 'Δx' : 'Width'} mm<input type="number" step="0.1" bind:value={item.w} onchange={commit}></label>
     <label>{item.type === 'line' ? 'Δy' : 'Height'} mm<input type="number" step="0.1" bind:value={item.h} onchange={commit}></label>
+    <label>Rotation °<input type="number" min="-360" max="360" step="1" value={item.rotate ?? 0} onchange={e => set('rotate', normalAngle(e.currentTarget.valueAsNumber))}></label>
+    <div class="turns">
+      {#each [0, 90, 180, -90] as a (a)}
+        <button class:active={(item.rotate ?? 0) === a || (a === 180 && item.rotate === -180)} onclick={() => set('rotate', normalAngle(a))} title="Rotate to {a}°">{a}°</button>
+      {/each}
+    </div>
+    {#if item.type === 'barcode' && item.rotate && item.rotate % 90}<p class="warn wide small">A code at a slant prints with jagged bars and may not scan. Keep codes at 0°, 90°, 180° or -90°.</p>{/if}
 
     {#if item.type === 'text'}
       <label class="wide">Text — use {'{{field}}'} for values from other systems
@@ -257,5 +264,7 @@
   .checks label { display: flex; align-items: center; gap: 5px; color: var(--text); font-size: 13px; }
   .help { padding-left: 18px; font-size: 12px; }
   .small { font-size: 12px; }
+  .turns { display: flex; gap: 4px; align-items: end; }
+  .turns button { flex: 1; padding: 5px 0; }
   p { margin: 0; }
 </style>
