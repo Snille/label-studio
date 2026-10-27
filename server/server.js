@@ -24,10 +24,13 @@ const allowed = [
   ['DELETE', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}$/],
   ['GET', /^\/api\/v1\/assets(\/[a-f0-9]{12}\/content)?$/],
   ['POST', /^\/api\/v1\/assets$/],
-  ['DELETE', /^\/api\/v1\/assets\/[a-f0-9]{12}$/]
+  ['DELETE', /^\/api\/v1\/assets\/[a-f0-9]{12}$/],
+  ['GET', /^\/api\/v1\/fonts(\/[a-f0-9]{12}\/content)?$/],
+  ['POST', /^\/api\/v1\/fonts$/],
+  ['DELETE', /^\/api\/v1\/fonts\/[a-f0-9]{12}$/]
 ];
-// A picture upload is up to 2 MB, about 2.7 MB as base64 in JSON.
-const bodyLimit = path => path === '/api/v1/assets' ? 3 * 1024 * 1024 : maxBody;
+// A picture upload is up to 2 MB, about 2.7 MB as base64 in JSON; a font or zip file up to 8 MB, about 10.7 MB.
+const bodyLimit = path => path === '/api/v1/assets' ? 3 * 1024 * 1024 : path === '/api/v1/fonts' ? 11 * 1024 * 1024 : maxBody;
 
 async function readBody(req, limit) {
   const chunks = []; let size = 0;

@@ -1,6 +1,7 @@
 <script>
-  import { fontFamilies, italicFamilies, fieldName, symbologies, symbologyHelp, twoDimensional, dateFormats, formatDate, pictureDefaults, normalAngle } from '../lib/model.js';
+  import { fieldName, symbologies, symbologyHelp, twoDimensional, dateFormats, formatDate, pictureDefaults, normalAngle } from '../lib/model.js';
   import { pictures } from '../lib/pictures.svelte.js';
+  import { fonts } from '../lib/fonts.svelte.js';
 
   let { editor, focusText = 0 } = $props();
   let textArea = $state();
@@ -12,6 +13,14 @@
   const set = (key, value) => { editor.update(item.uid, { [key]: value }); commit(); };
   const num = (value, fallback) => Number.isFinite(value) ? value : fallback;
   const optional = value => Number.isFinite(value) ? value : undefined;
+  // An uploaded family may lack some styles; label-service refuses a style the family does not have.
+  const styleKey = (bold, italic) => bold && italic ? 'boldItalic' : bold ? 'bold' : italic ? 'italic' : 'regular';
+  const canStyle = (bold, italic, family = item.font) => fonts.has(family, styleKey(bold, italic));
+  function chooseFont(family) {
+    let bold = Boolean(item.bold), italic = Boolean(item.italic);
+    if (!canStyle(bold, italic, family)) { if (canStyle(bold, false, family)) italic = false; else if (canStyle(false, italic, family)) bold = false; else { bold = false; italic = false; } }
+    editor.update(item.uid, { font: family, bold: bold || undefined, italic: italic || undefined }); commit();
+  }
 
   $effect(() => { if (focusText && textArea) { textArea.focus(); textArea.select(); } });
 
@@ -58,8 +67,8 @@
 
 {#snippet fontAndSize(fallback)}
   <label class="wide">Font
-    <select value={item.font || 'Liberation Sans'} onchange={e => { set('font', e.currentTarget.value); if (!italicFamilies.includes(e.currentTarget.value) && item.italic) set('italic', undefined); }}>
-      {#each fontFamilies as f (f)}<option value={f}>{f}</option>{/each}
+    <select value={item.font || 'Liberation Sans'} onchange={e => chooseFont(e.currentTarget.value)}>
+      {#each fonts.families as f (f.family)}<option value={f.family}>{f.family}{f.uploaded ? ' (uploaded)' : ''}</option>{/each}
     </select>
   </label>
   <label>Size
@@ -137,8 +146,8 @@
       </label>
       {@render placement('top')}
       <div class="wide checks">
-        <label><input type="checkbox" checked={Boolean(item.bold)} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
-        <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!italicFamilies.includes(item.font || 'Liberation Sans')} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
+        <label><input type="checkbox" checked={Boolean(item.bold)} disabled={!item.bold && !canStyle(true, Boolean(item.italic))} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
+        <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!item.italic && !canStyle(Boolean(item.bold), true)} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
         <label><input type="checkbox" checked={item.wrap !== false} onchange={e => set('wrap', e.currentTarget.checked ? undefined : false)}> Wrap</label>
         <label><input type="checkbox" checked={Boolean(item.breakHyphens)} onchange={e => set('breakHyphens', e.currentTarget.checked || undefined)}> Break at hyphens</label>
         <label><input type="checkbox" checked={item.color === 'white'} onchange={e => set('color', e.currentTarget.checked ? 'white' : undefined)}> White text</label>
@@ -156,8 +165,8 @@
       <span></span>
       {@render placement('top')}
       <div class="wide checks">
-        <label><input type="checkbox" checked={Boolean(item.bold)} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
-        <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!italicFamilies.includes(item.font || 'Liberation Sans')} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
+        <label><input type="checkbox" checked={Boolean(item.bold)} disabled={!item.bold && !canStyle(true, Boolean(item.italic))} onchange={e => set('bold', e.currentTarget.checked || undefined)}> Bold</label>
+        <label><input type="checkbox" checked={Boolean(item.italic)} disabled={!item.italic && !canStyle(Boolean(item.bold), true)} onchange={e => set('italic', e.currentTarget.checked || undefined)}> Italic</label>
         <label><input type="checkbox" checked={item.color === 'white'} onchange={e => set('color', e.currentTarget.checked ? 'white' : undefined)}> White text</label>
       </div>
     {:else if item.type === 'barcode'}

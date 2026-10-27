@@ -59,7 +59,10 @@ async function runTool(name, args, call) {
       // marginsMm: the edges a roll does not print, as the label reads in its natural direction (rolls added on the admin page).
       const roll = p => ({ mediaKey: p.key, sku: p.sku, widthMm: p.widthMm, heightMm: p.heightMm, ...(p.margins ? { marginsMm: p.margins } : {}) });
       return [text({ printer: f.printer, loaded: { ...roll(f.media), name: f.media.name, ...(f.media.status && f.media.status !== 'approved' ? { status: f.media.status } : {}) },
-        formats: f.mediaPresets.map(roll), printers: f.printers, fonts: f.fonts.map(x => x.family) })];
+        formats: f.mediaPresets.map(roll), printers: f.printers,
+        // Each family with the styles it has; uploaded families may lack some (label-service 0.14.0 names all four).
+        fonts: f.fonts.map(x => ({ family: x.family, styles: ['regular', 'bold', 'italic', 'boldItalic'].filter(s => x[s] ?? (s === 'regular' || (s === 'boldItalic' && x.bold && x.italic))),
+          ...(x.uploaded ? { uploaded: true } : {}) })) })];
     }
     case 'get_design_guide': return [text(guide)];
     case 'list_templates': return [text(ok(await call('GET', '/templates')).templates)];

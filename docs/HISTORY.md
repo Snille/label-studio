@@ -1,5 +1,14 @@
 # History
 
+## 0.12.0 - 2026-10-27
+
+Needs label-service 0.14.0 for uploaded fonts.
+
+- Fonts in the library: upload a `.ttf`, `.otf` or `.woff` file or a `.zip` with several (at most 8 MB), see each family and style with a sample, and delete a font that no saved template uses. The answer names the files a zip skipped.
+- The editor gets the font families from label-service and loads the uploaded ones into the page as FontFace objects, so the canvas draws them; the font menu marks uploaded families, and Bold and Italic are off when the family lacks that style (choosing a family drops a style it lacks).
+- The Studio server forwards `GET`, `POST` and `DELETE` on `/api/v1/fonts`, with an 11 MB body limit for the upload. `list_media` names each family with its styles; the design guide says so.
+- Checked in Docker Desktop against label-service 0.14.0 with local copies of a Windows font (never committed): one file and a zip with two styles uploaded through the Studio server, a repeated upload refused, the canvas and the preview drawn in the uploaded font, bold on and italic off for the missing bold italic.
+
 ## 0.11.0 - 2026-10-27
 
 Needs label-service 0.13.0 for rolls added on its admin page.

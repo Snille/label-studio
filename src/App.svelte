@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { api, hasKey, setKey, clearKey, checkKey } from './lib/api.js';
   import { Editor } from './lib/editor.svelte.js';
+  import { fonts } from './lib/fonts.svelte.js';
   import Library from './components/Library.svelte';
   import EditorView from './components/EditorView.svelte';
   import Batch from './components/Batch.svelte';
@@ -48,6 +49,8 @@
     editor.style = formats.style; editor.load(doc, media, source); view = 'editor';
   }
 
+  // Uploaded fonts come with the formats; the editor and the font menu use them from there.
+  $effect(() => { if (formats) fonts.use(formats.fonts); });
   $effect(() => {
     const warn = event => { if (editor.dirty) event.preventDefault(); };
     addEventListener('beforeunload', warn);
