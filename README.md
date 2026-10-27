@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.9.1, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.10.0, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 
@@ -23,6 +23,7 @@ browser (Studio key) ─▶ Label Studio server :3231 ─▶ label-service API :
 - **Pictures:** upload PNG, JPEG or SVG (at most 2 MB) in the library or from an image object; the library lists them with a thumbnail and deletes a picture that no saved template uses. Saving always adds a new draft version. Other systems print the newest published version.
 - **Print one label:** with the test values, after a confirmation that names the printer and the roll. A fresh preview and a new request id are made for each print, so label-service's guards apply unchanged.
 - **Batch print:** a published template (or the built-in box and location labels) filled from a sheet, one row per label. Open a `.xlsx`, `.ods`, `.csv`, `.tsv` or `.txt` file, or paste cells copied from a spreadsheet; the first row holds the column names, and only the first sheet is read. Old `.xls` files must be saved as `.xlsx` first. Columns are matched to fields by name or label and can be changed. Check rows asks label-service about every row without a print token, lists the rows that do not fit, and shows any row as label-service renders it. Rows can be left out. The chosen rows print as one job, one page per label, so the printer runs them in one go as DYMO Connect does (decision B8, changed 2026-10-27: the DYMO driver needs about 10 seconds between jobs). At most `batchLimit` labels go in one batch (label-service settings, 50 by default). The job's request id is kept in the browser per batch (same template version, same rows), so the same batch is not sent twice without a warning. If the printer stops in the middle, check the roll, leave out the rows that came out and print again. Numbers keep a decimal point, and dates become `yyyy-MM-dd` (with `HH:mm` when there is a time).
+- **Counter (serial numbers):** in a batch, any field can take the Counter instead of a column: the rows are numbered in their order from a start you choose, with a step, a number of digits (`0098`) and text before and after (`SNI-0098`). A field named counter, serial, number or nr takes it by itself. For labels that need nothing but a number, Only numbers makes a run of empty rows to count. Nothing is remembered between batches: choose the start each time (the owner's choice; a counter kept by label-service would need a new database schema).
 
 The editor draws text with the browser and the same fonts, so it is close to the result but not exact. The label-service preview is the truth.
 

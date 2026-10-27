@@ -3,7 +3,7 @@
   import { api } from '../lib/api.js';
   import { jobView } from '../lib/model.js';
   import { readSheet, parseText, sheetTypes, SheetError } from '../lib/sheet.js';
-  import { builtInFields, textFields, unsupported, autoMap, rowFields, batchKey, requestIds, rowState } from '../lib/batch.js';
+  import { builtInFields, textFields, unsupported, autoMap, rowFields, batchKey, requestIds, rowState, counterColumn, counterDefaults, counterText, numbersOnly } from '../lib/batch.js';
 
   let { formats, printer } = $props();
   let templates = $state([]);
@@ -13,6 +13,8 @@
   let mapping = $state({});
   let rows = $state([]);         // { values, selected, check?, error?, job?, open?, png? }
   let pasted = $state('');
+  let count = $state(10);
+  let counter = $state({ ...counterDefaults });
   let error = $state('');
   let checking = $state(false);
   let run = $state(null);        // { step: 'confirm' | 'printing' | 'done', ... }
@@ -28,6 +30,7 @@
   const selected = $derived(rows.filter(r => r.selected));
   const checked = $derived(selected.length > 0 && selected.every(r => r.check || r.error));
   const blocked = $derived(selected.filter(r => r.error || (r.check && !r.check.printable)));
+  const counted = $derived(Object.values(mapping).includes(counterColumn));
 
   onMount(async () => {
     try { templates = (await api('/templates')).templates; } catch (e) { error = e.message; }
@@ -57,6 +60,12 @@
     try { use(file.name, await readSheet(file.name, await file.arrayBuffer())); }
     catch (e) { error = e instanceof SheetError ? e.message : `The file could not be read: ${e.message}`; }
   }
+  // Labels that need only a number: a run of empty rows, each with the counter.
+  function useNumbers() {
+    const n = Math.trunc(count);
+    if (!(n >= 1 && n <= 2000)) { error = 'Choose 1-2000 labels.'; return; }
+    use(`Numbers only`, numbersOnly(n));
+  }
   function usePasted() {
     try { use('Pasted cells', parseText(pasted)); pasted = ''; } catch (e) { error = e.message; }
   }
@@ -71,7 +80,7 @@
   }
   // New values make every earlier check and job answer stale.
   function build() {
-    rows = sheet.rows.map((row, i) => ({ line: sheet.lines[i], values: rowFields(row, mapping, template.fields), selected: true }));
+    rows = sheet.rows.map((row, i) => ({ line: sheet.lines[i], values: rowFields({ ...row, [counterColumn]: counterText(i, counter) }, mapping, template.fields), selected: true }));
     run = null;
   }
 
@@ -162,16 +171,35 @@
         <textarea rows="3" bind:value={pasted} placeholder="name&#9;note"></textarea>
       </label>
       <button onclick={usePasted} disabled={!pasted.trim() || run?.step === 'printing'}>Use pasted cells</button>
-      {#if sheet}<p class="small muted">{sheet.source}: {sheet.rows.length} rows, columns {sheet.columns.join(', ')}.</p>{/if}
+      <div class="row numbers">
+        <span>Or only numbers:</span>
+        <input type="number" min="1" max="2000" step="1" bind:value={count} aria-label="Number of labels">
+        <span>labels</span>
+        <button onclick={useNumbers} disabled={run?.step === 'printing'}>Use numbers</button>
+      </div>
+      {#if sheet}<p class="small muted">{sheet.source}: {sheet.rows.length} rows{sheet.columns.length ? `, columns ${sheet.columns.join(', ')}` : ''}.</p>{/if}
     </div>
 
     {#if template && sheet}
       <div class="card">
-        <h3>3. Columns for the fields</h3>
+        <h3>3. Counter</h3>
+        <p class="small muted">Numbers the rows in their order, from the start you choose. Pick Counter as the column of a field below to use it. Nothing is remembered between batches.</p>
+        <div class="counter">
+          <label>Start<input type="number" step="1" bind:value={counter.start} onchange={build} disabled={run?.step === 'printing'}></label>
+          <label>Step<input type="number" step="1" bind:value={counter.step} onchange={build} disabled={run?.step === 'printing'}></label>
+          <label>Digits<input type="number" min="0" max="12" step="1" bind:value={counter.digits} onchange={build} disabled={run?.step === 'printing'}></label>
+          <label>Before<input bind:value={counter.prefix} maxlength="40" onchange={build} disabled={run?.step === 'printing'}></label>
+          <label>After<input bind:value={counter.suffix} maxlength="40" onchange={build} disabled={run?.step === 'printing'}></label>
+        </div>
+        <p class="small">{counterText(0, counter)}, {counterText(1, counter)}, {counterText(2, counter)} … {counterText(Math.max(sheet.rows.length - 1, 0), counter)}{counted ? '' : ' (not used yet)'}</p>
+      </div>
+      <div class="card">
+        <h3>4. Columns for the fields</h3>
         {#each fields as f (f.name)}
           <label class="map"><span>{f.label || f.name}{f.required === false ? '' : ' *'}</span>
             <select value={mapping[f.name]} onchange={e => { mapping[f.name] = e.currentTarget.value; build(); }} disabled={run?.step === 'printing'}>
               <option value="">(empty)</option>
+              <option value={counterColumn}>Counter</option>
               {#each sheet.columns as c (c)}<option value={c}>{c}</option>{/each}
             </select>
           </label>
@@ -240,6 +268,9 @@
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: grid; gap: 8px; }
   .card label { display: grid; gap: 3px; }
   .map { grid-template-columns: 1fr 1fr; align-items: center; }
+  .numbers { align-items: center; gap: 6px; }
+  .numbers input { width: 80px; }
+  .counter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   h2, h3, p { margin: 0; }
   table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid var(--line); vertical-align: top; }

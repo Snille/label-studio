@@ -1,5 +1,13 @@
 # History
 
+## 0.10.0 - 2026-10-27
+
+Phase 3: counters.
+
+- Batch print has a counter: a field can take Counter instead of a sheet column, and the rows are numbered in their order from a chosen start, with a step, zero-padded digits and text before and after (`SNI-0098`). Fields named counter, serial, number or nr take it by themselves. Only numbers makes a run of 1-2000 empty rows, for labels that need nothing but a number.
+- The owner chose a start that is set for each batch over a counter remembered in label-service, so numbers can repeat if the same start is used again; nothing in label-service changes.
+- Checked in a browser against label-service 0.11.0 without a printer: five labels numbered SNI-0098 to SNI-0102, the field mapped by itself, all rows fit, and a Code 128 of the number renders.
+
 ## 0.9.1 - 2026-10-27
 
 - The New template form offers Any roll as the first label format (drawn on the loaded roll); before, only the template panel of an open template had the choice.

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readSheet, parseText, excelDate, decodeXml } from '../src/lib/sheet.js';
-import { autoMap, rowFields, batchKey, requestIds, rowState, textFields, builtInFields } from '../src/lib/batch.js';
+import { autoMap, rowFields, batchKey, requestIds, rowState, textFields, builtInFields, counterText, counterColumn, numbersOnly } from '../src/lib/batch.js';
 
 // A small zip writer for the tests: deflated entries, or stored ones with store: true. The reader does not check CRCs.
 async function zip(files, { store = false } = {}) {
@@ -103,4 +103,17 @@ test('a batch maps columns to fields, keeps row values stable and reuses request
   assert.equal(rowState({ check: { printable: false, warnings: [{ message: 'Too long.' }] } }).text, 'Too long.');
   assert.equal(rowState({ check: { printable: true }, job: { kind: 'ok', text: 'Printed.' } }).text, 'Printed.');
   assert.equal(rowState({ error: 'item must be a non-empty string.' }).kind, 'error');
+});
+
+test('a counter numbers the rows from a chosen start, with steps, zeros, prefix and suffix', () => {
+  assert.equal(counterText(0), '1'); assert.equal(counterText(4), '5');
+  assert.equal(counterText(2, { start: 98, digits: 4, prefix: 'SNI-', suffix: '/A' }), 'SNI-0100/A');
+  assert.equal(counterText(3, { start: 10, step: -5, digits: 2 }), '-05');
+  assert.equal(counterText(1, { start: '7', step: '', digits: 'x' }), '7');
+  // A field named like a serial number takes the counter when no column has its name.
+  assert.deepEqual(autoMap({ serial: { type: 'text' }, item: { type: 'text' }, nr: { type: 'text', label: 'Item' } }, ['Item']),
+    { serial: counterColumn, item: 'Item', nr: 'Item' });
+  const run = numbersOnly(3);
+  assert.equal(run.rows.length, 3); assert.deepEqual(run.lines, [1, 2, 3]);
+  assert.deepEqual(rowFields({ ...run.rows[2], [counterColumn]: counterText(2, { digits: 3 }) }, { serial: counterColumn }, { serial: { type: 'text' } }), { serial: '003' });
 });

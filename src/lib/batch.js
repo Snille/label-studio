@@ -13,11 +13,25 @@ export const builtInFields = {
 export const textFields = fields => Object.entries(fields || {}).filter(([, f]) => f.type === 'text').map(([name, f]) => ({ name, ...f }));
 export const unsupported = fields => Object.entries(fields || {}).filter(([, f]) => f.type !== 'text').map(([name]) => name);
 
-// Each field takes the column with the same name or label, ignoring case, spaces, hyphens and underscores.
+// A counter is a column of numbers that Studio makes itself: row n (0 first) gets start + n * step, written with at
+// least digits digits, between a prefix and a suffix. The start is chosen for each batch; nothing is remembered.
+export const counterColumn = '#counter';
+export const counterDefaults = { start: 1, step: 1, digits: 0, prefix: '', suffix: '' };
+export function counterText(index, { start = 1, step = 1, digits = 0, prefix = '', suffix = '' } = {}) {
+  const value = Math.trunc(+start || 0) + index * Math.trunc(+step || 0), width = Math.max(0, Math.min(12, Math.trunc(+digits || 0)));
+  return `${prefix}${value < 0 ? '-' : ''}${String(Math.abs(value)).padStart(width, '0')}${suffix}`;
+}
+const counterNames = new Set(['counter', 'serial', 'serialno', 'number', 'no', 'nr', 'lopnummer', 'löpnummer']);
+
+// Each field takes the column with the same name or label, ignoring case, spaces, hyphens and underscores; a field
+// named like a serial number (counter, serial, number, nr) takes the counter when no column matches.
 const simple = s => String(s || '').toLowerCase().replace(/[\s_-]+/g, '');
 export function autoMap(fields, columns) {
-  return Object.fromEntries(textFields(fields).map(f => [f.name, columns.find(c => simple(c) === simple(f.name)) || columns.find(c => f.label && simple(c) === simple(f.label)) || '']));
+  return Object.fromEntries(textFields(fields).map(f => [f.name, columns.find(c => simple(c) === simple(f.name)) || columns.find(c => f.label && simple(c) === simple(f.label))
+    || (counterNames.has(simple(f.name)) || counterNames.has(simple(f.label)) ? counterColumn : '')]));
 }
+// A run of rows with only the counter, for labels that need nothing but a number.
+export const numbersOnly = count => ({ columns: [], rows: Array.from({ length: count }, () => ({})), lines: Array.from({ length: count }, (_, i) => i + 1) });
 
 // The field values for one row. An unmapped field is empty; label-service says when a required one is missing.
 export function rowFields(row, mapping, fields) {
