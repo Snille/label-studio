@@ -56,8 +56,10 @@ async function runTool(name, args, call) {
   switch (name) {
     case 'list_media': {
       const f = ok(await call('GET', `/formats${query('printer', args.printer)}`));
-      return [text({ printer: f.printer, loaded: { mediaKey: f.mediaKey, sku: f.media.sku, widthMm: f.media.widthMm, heightMm: f.media.heightMm, name: f.media.name },
-        formats: f.mediaPresets.map(p => ({ mediaKey: p.key, sku: p.sku, widthMm: p.widthMm, heightMm: p.heightMm })), printers: f.printers, fonts: f.fonts.map(x => x.family) })];
+      // marginsMm: the edges a roll does not print, as the label reads in its natural direction (rolls added on the admin page).
+      const roll = p => ({ mediaKey: p.key, sku: p.sku, widthMm: p.widthMm, heightMm: p.heightMm, ...(p.margins ? { marginsMm: p.margins } : {}) });
+      return [text({ printer: f.printer, loaded: { ...roll(f.media), name: f.media.name, ...(f.media.status && f.media.status !== 'approved' ? { status: f.media.status } : {}) },
+        formats: f.mediaPresets.map(roll), printers: f.printers, fonts: f.fonts.map(x => x.family) })];
     }
     case 'get_design_guide': return [text(guide)];
     case 'list_templates': return [text(ok(await call('GET', '/templates')).templates)];

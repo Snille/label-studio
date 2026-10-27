@@ -174,6 +174,12 @@
       onpointerdown={backgroundDown} onpointermove={move} onpointerup={up} onpointercancel={up}
       ondblclick={() => { if (editor.selection.length === 1 && editor.selection[0].type === 'text') ontextedit?.(); }}>
       <rect class="label" x="0" y="0" width={canvas.w * K} height={canvas.h * K} rx="2" />
+      {#if editor.margins}
+        {@const m = editor.margins}
+        <!-- The edges this roll does not print; label-service warns about objects that reach into them. -->
+        <path class="unprinted" fill-rule="evenodd"
+          d="M0 0H{canvas.w * K}V{canvas.h * K}H0Z M{m.left * K} {m.top * K}V{(canvas.h - m.bottom) * K}H{(canvas.w - m.right) * K}V{m.top * K}Z" />
+      {/if}
       {#if gridLines}
         <g class="grid">
           {#each gridLines.x as x (x)}<line x1={x * K} x2={x * K} y1="0" y2={canvas.h * K} />{/each}
@@ -285,6 +291,7 @@
   .stage.creating { cursor: crosshair; }
   .label { fill: #fff; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45)); }
   .grid line { stroke: var(--grid); stroke-width: 0.25; }
+  .unprinted { fill: rgba(224, 64, 64, 0.16); pointer-events: none; }
   .text { width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden; pointer-events: none; }
   .hit { fill: transparent; stroke: transparent; cursor: move; }
   /* The editor shows the picture in grey; the label-service preview shows the black and white dots. */

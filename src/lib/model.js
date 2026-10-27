@@ -32,6 +32,14 @@ export function canvasSize(media, orientation) {
   const w = media.widthPt / ptPerMm, h = media.heightPt / ptPerMm;
   return rotated ? { w: h, h: w } : { w, h };
 }
+// The edges a roll does not print, in mm, measured with its test print in label-service (decision B12). They are given
+// as the label reads in its natural direction; turned a quarter (label-service's pageSvg), the label's left edge becomes
+// the canvas's top, its top the right, its right the bottom and its bottom the left.
+export function canvasMargins(media, orientation) {
+  const m = media?.margins; if (!m) return null;
+  const rotated = (orientation || naturalOrientation(media)) !== naturalOrientation(media);
+  return rotated ? { top: m.left, right: m.top, bottom: m.right, left: m.bottom } : { ...m };
+}
 
 // Each axis takes two of start, end and size, in millimetres or a percentage of the side (as label-service does).
 export function resolveBox(item, canvas) {

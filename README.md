@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.10.0, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.11.0, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 
@@ -19,6 +19,7 @@ browser (Studio key) ─▶ Label Studio server :3231 ─▶ label-service API :
 - **Any roll:** a template can be made for every roll. Tick Any roll in the template panel: it is drawn on one roll, and saving writes `media: ["*"]` with every position and size as a share of the label (`"12.5%"`), so the objects follow the size of each roll. Font sizes, line widths and corner radii stay as they are; give text a shrink-to size for small rolls.
 - **Fields and test data:** a `{{name}}` in a text or in barcode data creates a field. Each field has a test value that is saved with the template.
 - **Preview:** half a second after each change, label-service renders the label as a PNG with the test values. Objects that do not fit are named in the warnings and outlined on the canvas.
+- **Rolls and margins:** the rolls come from label-service, including those added on its admin page (decision B11). A new roll shows up once its test print is approved there (B12). Its edges that do not print, measured on that test print, are shaded red on the canvas, and the preview warns about an object that reaches into them.
 - **Template library:** built-in and saved templates, versions with their status, open, duplicate, publish, archive. A template whose every version is archived is hidden until you tick Show archived. A template that was never published can be deleted with all its versions; a published one can only be archived, because other systems may use it.
 - **Pictures:** upload PNG, JPEG or SVG (at most 2 MB) in the library or from an image object; the library lists them with a thumbnail and deletes a picture that no saved template uses. Saving always adds a new draft version. Other systems print the newest published version.
 - **Print one label:** with the test values, after a confirmation that names the printer and the roll. A fresh preview and a new request id are made for each print, so label-service's guards apply unchanged.
@@ -36,7 +37,7 @@ Keys in the editor: `V` select, `T` text, `L` line, `R` rectangle, `E` ellipse, 
 - Templates are edited in millimetres on one roll. A template for one roll that used percentages or `right`/`bottom` is saved in millimetres; an any-roll template is saved in percentages of the roll it was drawn on.
 - The preview needs the template's roll in the chosen printer, because label-service renders on the loaded roll.
 - The interface is in English only.
-- Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0; pictures need 0.8.0; lightening and print density need 0.9.0; batch printing and rotation need 0.11.0; PDF pages and the new barcode types need 0.12.0.
+- Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0; pictures need 0.8.0; lightening and print density need 0.9.0; batch printing and rotation need 0.11.0; PDF pages and the new barcode types need 0.12.0; rolls added on the admin page and their margins need 0.13.0.
 
 ## MCP server
 

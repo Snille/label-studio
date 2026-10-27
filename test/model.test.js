@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canvasSize, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
+import { canvasSize, canvasMargins, resolveBox, toEditor, toDefinition, syncFields, unusedFields, sampleValues, fillText, snapAxis, snapTargets,
   align, reorder, duplicate, History, problems, editMedia, blankTemplate, newObject, requestId, jobView, formatDate, pictureDefaults,
   bounds, normalAngle, snapAngle, unturn, placeTurned } from '../src/lib/model.js';
 
@@ -17,6 +17,14 @@ test('the canvas turns when the direction differs from the format', () => {
   const landscape = canvasSize(s0722430, 'landscape');
   near(landscape.w, 100.89); near(landscape.h, 54.33);
   near(canvasSize(shipping).h, 210);
+});
+
+test('the edges a roll does not print turn with the canvas as label-service turns them', () => {
+  // A made-up 40 x 30 mm roll, landscape by nature; margins as the label reads in that direction.
+  const roll = { key: 'custom_40x30mm_40x30mm', widthPt: 113.39, heightPt: 85.04, widthMm: 40, heightMm: 30, margins: { top: 1.5, right: 0.5, bottom: 1.5, left: 1 } };
+  assert.deepEqual(canvasMargins(roll, 'landscape'), roll.margins);
+  assert.deepEqual(canvasMargins(roll, 'portrait'), { top: 1, right: 1.5, bottom: 0.5, left: 1.5 });
+  assert.equal(canvasMargins(s0722540, 'landscape'), null);
 });
 
 test('boxes resolve millimetres, percentages and end offsets like label-service', () => {

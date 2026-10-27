@@ -1,5 +1,5 @@
 // Editor state for one template: the document, the selection, undo history and view settings.
-import { History, canvasSize, toDefinition, align, reorder, duplicate, newObject, bounds } from './model.js';
+import { History, canvasSize, canvasMargins, toDefinition, align, reorder, duplicate, newObject, bounds } from './model.js';
 
 const snapshot = doc => JSON.parse(JSON.stringify(doc));
 
@@ -23,6 +23,7 @@ export class Editor {
   history = new History();
 
   canvas = $derived(this.doc && this.media ? canvasSize(this.media, this.doc.orientation) : { w: 0, h: 0 });
+  margins = $derived(this.doc && this.media ? canvasMargins(this.media, this.doc.orientation) : null);
   definition = $derived(this.doc ? toDefinition(this.doc, this.canvas) : null);
   dirty = $derived(this.definition ? JSON.stringify(this.definition) !== this.saved : false);
   selection = $derived(this.doc ? this.doc.objects.filter(o => this.selected.includes(o.uid)) : []);

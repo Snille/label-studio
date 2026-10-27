@@ -1,5 +1,14 @@
 # History
 
+## 0.11.0 - 2026-10-27
+
+Needs label-service 0.13.0 for rolls added on its admin page.
+
+- The editor shades the edges a roll does not print in red, from the margins label-service measured with the roll's test print (decision B12). They turn with the canvas as label-service turns them. The preview warns about an object that reaches into them.
+- New rolls need no change in Studio: they appear in the label formats when an admin has approved their test print. A roll still being tested is named as the loaded roll, and the preview says why nothing prints.
+- `list_media` gives each roll's `marginsMm`, and the loaded roll's `status` while it is being tested; the design guide explains the margins.
+- Checked in Docker Desktop against label-service 0.13.0 with a made-up 40 × 30 mm roll and printer: the shaded edges and the warning for a rectangle at the left edge.
+
 ## 0.10.0 - 2026-10-27
 
 Phase 3: counters, PDF pages and more barcodes.
