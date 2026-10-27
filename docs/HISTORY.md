@@ -1,5 +1,11 @@
 # History
 
+## 0.6.1 - 2026-10-27
+
+First MCP design test with the owner: a 25 × 54 mm cable tag (name, detail, QR code, date) was designed, previewed with short and long values, saved as a draft, published by the owner and printed once through `print_label` with the owner's approval.
+
+- The design guide says that objects must stay inside the canvas (label-service 0.9.2 warns about it) and that object ids take letters, digits and `_`, without hyphens.
+
 ## 0.6.0 - 2026-10-26
 
 Phase 2 of the design report: an MCP server, so an LLM can design labels.

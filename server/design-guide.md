@@ -31,7 +31,7 @@ Templates are JSON for label-service, which renders and prints labels on DYMO La
 - `id`: 2-64 lower-case letters, digits or hyphens; not `box`, `location` or `lines`. Saving the same id adds a version.
 - `media`: the `key` of each roll the template is made for (from `list_media`), or `["*"]` for any roll with positions in percentages.
 - `orientation`: `portrait` or `landscape`, the direction the text reads. The canvas is the roll's width × height, turned a quarter when the orientation differs from the roll's own (landscape when the label is wider than tall).
-- Coordinates are millimetres from the top left of the readable canvas, or a share of the side such as `"25%"`. Each axis takes exactly two of start, end and size: `x`/`right`/`w` and `y`/`bottom`/`h`.
+- Coordinates are millimetres from the top left of the readable canvas, or a share of the side such as `"25%"`. Each axis takes exactly two of start, end and size: `x`/`right`/`w` and `y`/`bottom`/`h`. Every object must stay inside the canvas; one that reaches outside is a warning.
 - `printDensity` (optional): `light`, `medium`, `normal` or `dark`.
 
 ## Fields
@@ -47,7 +47,7 @@ Templates are JSON for label-service, which renders and prints labels on DYMO La
 - `date`: the date and time of the preview, `format` with `yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`; `prefix` and `suffix`; the text properties.
 - `image`: `asset` is the id of an uploaded picture (`list_assets`, `upload_asset`); `fit` (`contain` default, or `stretch`), `mode` (`threshold` for logos, `dither` for photos), `threshold`, `lighten`, `invert`, `align`, `valign`.
 
-Give important objects an `id`: warnings name objects by it.
+Give important objects an `id`: warnings name objects by it. An object `id` starts with a letter and uses letters, digits and `_` (no hyphens, unlike the template `id`), and each one is used once.
 
 ## Good labels
 
