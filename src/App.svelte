@@ -4,6 +4,7 @@
   import { Editor } from './lib/editor.svelte.js';
   import Library from './components/Library.svelte';
   import EditorView from './components/EditorView.svelte';
+  import Batch from './components/Batch.svelte';
 
   const version = __APP_VERSION__;
   const editor = new Editor();
@@ -77,6 +78,7 @@
         <button class:active={view === 'editor'} disabled={!editor.doc} onclick={() => { view = 'editor'; }}>
           Editor{#if editor.doc}: {editor.doc.name}{editor.dirty ? ' •' : ''}{/if}
         </button>
+        <button class:active={view === 'batch'} onclick={() => { view = 'batch'; }}>Batch print</button>
       </nav>
       <span class="grow"></span>
       {#if formats.printers.length > 1}
@@ -91,6 +93,8 @@
     </header>
     {#if view === 'library'}
       <Library {formats} onopen={open} />
+    {:else if view === 'batch'}
+      <Batch {formats} {printer} />
     {:else}
       <EditorView {editor} {formats} {printer} onrefresh={refreshFormats} />
     {/if}

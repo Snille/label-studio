@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.6.0, phase 2 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.7.0, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 
@@ -21,6 +21,7 @@ browser (Studio key) ─▶ Label Studio server :3231 ─▶ label-service API :
 - **Template library:** built-in and saved templates, versions with their status, open, duplicate, publish, archive. A template whose every version is archived is hidden until you tick Show archived. A template that was never published can be deleted with all its versions; a published one can only be archived, because other systems may use it.
 - **Pictures:** upload PNG, JPEG or SVG (at most 2 MB) in the library or from an image object; the library lists them with a thumbnail and deletes a picture that no saved template uses. Saving always adds a new draft version. Other systems print the newest published version.
 - **Print one label:** with the test values, after a confirmation that names the printer and the roll. A fresh preview and a new request id are made for each print, so label-service's guards apply unchanged.
+- **Batch print:** a published template (or the built-in box and location labels) filled from a sheet, one row per label and one print job per row (decision B8). Open a `.xlsx`, `.ods`, `.csv`, `.tsv` or `.txt` file, or paste cells copied from a spreadsheet; the first row holds the column names, and only the first sheet is read. Old `.xls` files must be saved as `.xlsx` first. Columns are matched to fields by name or label and can be changed. Check rows asks label-service about every row without a print token, lists the rows that do not fit, and shows any row as label-service renders it. Rows can be left out. At most `batchLimit` labels go in one batch (label-service settings, 50 by default). Printing makes a fresh preview for each row right before it prints, sends one label at a time and waits until it has printed, so a printer problem stops the batch after one label. Each row's request id is kept in the browser for that batch (same template version, same values), so running a stopped batch again skips the rows that were sent. Numbers keep a decimal point, and dates become `yyyy-MM-dd` (with `HH:mm` when there is a time).
 
 The editor draws text with the browser and the same fonts, so it is close to the result but not exact. The label-service preview is the truth.
 
@@ -31,7 +32,7 @@ Keys in the editor: `V` select, `T` text, `L` line, `R` rectangle, `E` ellipse, 
 - Templates are edited in absolute millimetres. A template that used percentages or `right`/`bottom` (the built-in ones) is saved in millimetres for the format it was opened on.
 - The preview needs the template's roll in the chosen printer, because label-service renders on the loaded roll.
 - The interface is in English only.
-- Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0; pictures need 0.8.0; lightening and print density need 0.9.0.
+- Barcodes, QR codes and dates need label-service 0.6.0 or later; deleting templates needs 0.7.0; pictures need 0.8.0; lightening and print density need 0.9.0; batch printing needs 0.10.0.
 
 ## MCP server
 

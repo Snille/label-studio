@@ -1,5 +1,15 @@
 # History
 
+## 0.7.0 - 2026-10-27
+
+Phase 3 starts: batch printing.
+
+- Batch print view: a published template, or the built-in box and location labels, filled from a sheet. One row becomes one label and one print job with its own request id (decision B8); at most `batchLimit` labels per batch (B16).
+- An own spreadsheet reader, without packages (the owner chose it over SheetJS): `.xlsx` and `.ods` (zip files inflated with `DecompressionStream`), `.csv`, `.tsv` and `.txt` (tab, semicolon or comma; UTF-8 or Windows-1252), and cells pasted from a spreadsheet. The first sheet only; numbers as written, dates as `yyyy-MM-dd` (`HH:mm`). Old `.xls` is refused with a hint to save as `.xlsx`.
+- Columns are matched to fields by name or label. Check rows uses label-service 0.10.0's check without a token; rows that do not fit are listed and can be left out, and any row can be shown as label-service renders it.
+- Printing makes a fresh preview per row, sends one label at a time and waits until it has printed; a refused, lost or unfinished label stops the batch. Request ids are kept in the browser per batch, so running a stopped batch again skips rows already sent.
+- Checked in a browser against a local label-service without a printer: pasted rows, automatic column matching, too-long and too-wide rows named, rows left out, the confirmation, and a batch that stops with the service's error on the first row. 34 unit tests, including xlsx (stored and deflated), ods and text files built in the tests.
+
 ## 0.6.1 - 2026-10-27
 
 First MCP design test with the owner: a 25 × 54 mm cable tag (name, detail, QR code, date) was designed, previewed with short and long values, saved as a draft, published by the owner and printed once through `print_label` with the owner's approval.
