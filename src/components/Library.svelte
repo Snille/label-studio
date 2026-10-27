@@ -70,8 +70,9 @@
   }
   function create(event) {
     event.preventDefault();
-    const media = presets.find(p => p.key === creating.mediaKey);
-    onopen(blankTemplate(media, { id: creating.id, name: creating.name.trim(), orientation: creating.orientation }), media, null);
+    // A template for any roll is drawn on the loaded roll.
+    const anyRoll = creating.mediaKey === '*', media = presets.find(p => p.key === (anyRoll ? formats.mediaKey : creating.mediaKey)) || presets[0];
+    onopen(blankTemplate(media, { id: creating.id, name: creating.name.trim(), orientation: creating.orientation, anyRoll }), media, null);
     creating = null;
   }
   const idTaken = $derived(creating && templates.some(t => t.id === creating.id));
@@ -96,6 +97,7 @@
         {#if idTaken}<p class="warn">This id exists. Saving adds a new version to that template.</p>{/if}
         <label>Label format
           <select bind:value={creating.mediaKey}>
+            <option value="*">Any roll (drawn on the loaded roll)</option>
             {#each presets as p (p.key)}<option value={p.key}>{p.name}{p.key === formats.mediaKey ? ' (loaded)' : ''}</option>{/each}
           </select>
         </label>

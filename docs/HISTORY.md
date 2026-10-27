@@ -1,5 +1,11 @@
 # History
 
+## 0.9.1 - 2026-10-27
+
+- The New template form offers Any roll as the first label format (drawn on the loaded roll); before, only the template panel of an open template had the choice.
+- The top bar shows the Studio version next to the name.
+- The owner's paper test of 0.8.0 / label-service 0.11.0: a batch prints as one job and all labels come out in one run; vertical text prints right, also in a batch.
+
 ## 0.9.0 - 2026-10-27
 
 - Any roll: a checkbox in the template panel saves the template with `media: ["*"]` and every position and size as a share of the label it is drawn on, so it prints on every roll (the built-in templates work the same way). Opening it again gives millimetres on the roll chosen to draw on; the panel says that font sizes, line widths and corners do not scale. Before, Studio always saved for one roll, and an any-roll template opened in the editor became a one-roll template.

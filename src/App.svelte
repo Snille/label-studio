@@ -73,6 +73,7 @@
     <header>
       <img src="/favicon-32.png" alt="" width="24" height="24">
       <strong>Label Studio</strong>
+      <span class="version" title="Label Studio version">v{version}</span>
       <nav>
         <button class:active={view === 'library'} onclick={() => { view = 'library'; }}>Templates</button>
         <button class:active={view === 'editor'} disabled={!editor.doc} onclick={() => { view = 'editor'; }}>
@@ -109,5 +110,6 @@
   .shell { display: grid; grid-template-rows: auto 1fr; height: 100%; }
   header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
   nav { display: flex; gap: 6px; margin-left: 12px; }
+  .version { font-size: 12px; color: var(--muted); }
   .roll { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
 </style>

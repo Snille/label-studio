@@ -269,8 +269,8 @@ export class History {
   get canRedo() { return this.future.length > 0; }
 }
 
-export function blankTemplate(media, { id = 'new-label', name = 'New label', orientation } = {}) {
-  return { id, name, description: '', media: [media.key], orientation: orientation || naturalOrientation(media), fields: {}, objects: [] };
+export function blankTemplate(media, { id = 'new-label', name = 'New label', orientation, anyRoll = false } = {}) {
+  return { id, name, description: '', media: [media.key], anyRoll, orientation: orientation || naturalOrientation(media), fields: {}, objects: [] };
 }
 
 // A short check before saving, so the user sees the problem next to the field instead of a server error.

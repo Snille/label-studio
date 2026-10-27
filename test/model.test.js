@@ -205,7 +205,7 @@ test('rotation: angles, snapping, turned bounds and resizing in the frame of the
 test('a template for any roll saves media "*" and positions as shares of the label, and opens again in millimetres', () => {
   const canvas = canvasSize(s0722540, 'landscape'), doc = toEditor({ id: 'tag', name: 'Tag', media: ['w162h90'], orientation: 'landscape', fields: {},
     objects: [{ id: 't', type: 'text', x: 5.7, y: 3.2, w: 45.6, h: 8, text: 'A', rotate: 90 }, { type: 'line', x: 2, y: 20, w: 10, h: 0 }] }, s0722540);
-  assert.equal(doc.anyRoll, false); assert.deepEqual(toDefinition(doc, canvas).media, ['w162h90']); assert.equal(toDefinition(doc, canvas).objects[0].x, 5.7);
+  assert.equal(doc.anyRoll, false); assert.equal(blankTemplate(s0722540, { anyRoll: true }).anyRoll, true); assert.deepEqual(toDefinition(doc, canvas).media, ['w162h90']); assert.equal(toDefinition(doc, canvas).objects[0].x, 5.7);
   doc.anyRoll = true;
   const saved = toDefinition(doc, canvas), [t, line] = saved.objects;
   assert.deepEqual(saved.media, ['*']);
