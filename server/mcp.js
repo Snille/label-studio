@@ -35,8 +35,10 @@ export const tools = [
     description: 'Uploaded pictures (id, name, size in pixels) for image objects.',
     inputSchema: object({}) },
   { name: 'upload_asset', title: 'Upload a picture', annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
-    description: 'Uploads a PNG, JPEG or SVG picture (base64, at most 2 MB) and returns its id for an image object.',
-    inputSchema: object({ name: { type: 'string' }, data: { type: 'string', description: 'The picture file as base64.' } }, ['name', 'data']) },
+    description: 'Uploads a PNG, JPEG or SVG picture, or one page of a PDF (base64, at most 2 MB), and returns its id for an image object. crop keeps part of it.',
+    inputSchema: object({ name: { type: 'string' }, data: { type: 'string', description: 'The picture or PDF file as base64.' },
+      page: { type: 'integer', minimum: 1, description: 'For a PDF: the page, 1 for the first.' },
+      crop: { type: 'object', description: 'Keep only this part: { x, y, w, h }, shares of the picture from 0 to 1.', properties: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' } } } }, ['name', 'data']) },
   { name: 'print_label', title: 'Print one label', annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     description: 'Prints ONE physical label from a preview token. Before every call, show the user the preview and get a clear yes in the conversation. Only published templates print with this key. Keep the returned requestId: repeating it never prints twice, and job_status checks it.',
     inputSchema: object({ token: { type: 'string' }, requestId: { type: 'string', description: 'A UUID; one is made when left out.' } }, ['token']) },
@@ -76,7 +78,7 @@ async function runTool(name, args, call) {
       return [text({ id: r.id, version: r.version, status: r.status, note: 'Saved as a draft. A person publishes it in Label Studio.' })];
     }
     case 'list_assets': return [text(ok(await call('GET', '/assets')).assets)];
-    case 'upload_asset': return [text(ok(await call('POST', '/assets', { name: args.name, data: args.data })))];
+    case 'upload_asset': return [text(ok(await call('POST', '/assets', { name: args.name, data: args.data, page: args.page, crop: args.crop })))];
     case 'print_label': {
       const requestId = args.requestId || randomUUID();
       const r = ok(await call('POST', '/jobs', { token: args.token, requestId }));

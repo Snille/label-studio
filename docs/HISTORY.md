@@ -2,7 +2,10 @@
 
 ## 0.10.0 - 2026-10-27
 
-Phase 3: counters.
+Phase 3: counters and PDF pages.
+
+- Print PDF view: a PDF page (or a PNG or JPEG) prints on the loaded roll without a template. The page is uploaded as a picture through label-service 0.12.0, shown so a part can be marked by dragging, then cropped by label-service and placed in an unsaved one-picture design that fills the label (turned a quarter when that makes it larger, 1 mm margin), previewed and printed once with the usual fresh preview and request id. The pictures made for it are deleted afterwards. Checked in a browser against label-service 0.12.0 with poppler and no printer: a test A4 page with a shipping label drawn, the label marked and cropped, the preview filled the 102 x 210 mm label, the print stopped with the service's error, and Done left no pictures behind.
+- The picture upload in the library and the editor takes PDF files (first page). The MCP tool `upload_asset` takes `page` and `crop`, and the design guide mentions them.
 
 - Batch print has a counter: a field can take Counter instead of a sheet column, and the rows are numbered in their order from a chosen start, with a step, zero-padded digits and text before and after (`SNI-0098`). Fields named counter, serial, number or nr take it by themselves. Only numbers makes a run of 1-2000 empty rows, for labels that need nothing but a number.
 - The owner chose a start that is set for each batch over a counter remembered in label-service, so numbers can repeat if the same start is used again; nothing in label-service changes.

@@ -24,7 +24,7 @@
   <div class="row">
     <h2 class="grow">Pictures</h2>
     <label class="button">{uploading ? 'Uploading…' : 'Upload picture'}
-      <input type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" disabled={uploading} onchange={upload}>
+      <input type="file" accept=".png,.jpg,.jpeg,.svg,.pdf,image/png,image/jpeg,image/svg+xml,application/pdf" disabled={uploading} onchange={upload}>
     </label>
   </div>
   {#if error || pictures.error}<p class="error">{error || pictures.error}</p>{/if}

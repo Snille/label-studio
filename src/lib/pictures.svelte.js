@@ -16,13 +16,14 @@ class Pictures {
   }
   byId(id) { return this.list.find(p => p.id === id); }
 
-  // Reads a file from the computer and uploads it; label-service checks and converts it.
-  async upload(file) {
-    if (file.size > maxBytes) throw new ApiError('The picture is larger than 2 MB. Make it smaller first.', 413);
+  // Reads a file from the computer and uploads it; label-service checks and converts it. A PDF takes options.page
+  // (1 for the first); options.crop { x, y, w, h } (shares from 0 to 1) keeps part of any picture.
+  async upload(file, options = {}) {
+    if (file.size > maxBytes) throw new ApiError('The file is larger than 2 MB. Make it smaller first.', 413);
     const bytes = new Uint8Array(await file.arrayBuffer());
     let binary = '';
     for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    const record = await api('/assets', { method: 'POST', body: { name: file.name.replace(/\.[^.]+$/, ''), data: btoa(binary) } });
+    const record = await api('/assets', { method: 'POST', body: { name: options.name || file.name.replace(/\.[^.]+$/, ''), data: btoa(binary), page: options.page, crop: options.crop } });
     this.list = [...this.list, record];
     return record;
   }

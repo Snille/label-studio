@@ -46,7 +46,7 @@ Templates are JSON for label-service, which renders and prints labels on DYMO La
 - `rect`, `ellipse`: `stroke` in mm (0 for none), `fill` (`none`, `black`, `white`), `radius` (rect corners), `dash`.
 - `barcode`: `symbology` `code128`, `ean13` (12 digits; the check digit is added), `qrcode` (`ecLevel` L, M, Q, H) or `datamatrix`; `data` with placeholders; `humanReadable` (`below` default or `none`, linear codes only) with `font` and `size` for that text; `align`, `valign`. Bars are at least 2 printer dots (0.17 mm) and 2D modules at least 3 dots, so a box that is too small is a warning that names the size needed. Leave about 2 mm empty on each side of a linear code.
 - `date`: the date and time of the preview, `format` with `yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`; `prefix` and `suffix`; the text properties.
-- `image`: `asset` is the id of an uploaded picture (`list_assets`, `upload_asset`); `fit` (`contain` default, or `stretch`), `mode` (`threshold` for logos, `dither` for photos), `threshold`, `lighten`, `invert`, `align`, `valign`.
+- `image`: `asset` is the id of an uploaded picture (`list_assets`, `upload_asset`, which also takes one page of a PDF with `page` and keeps part of a picture with `crop`); `fit` (`contain` default, or `stretch`), `mode` (`threshold` for logos, `dither` for photos), `threshold`, `lighten`, `invert`, `align`, `valign`.
 
 Give important objects an `id`: warnings name objects by it. An object `id` starts with a letter and uses letters, digits and `_` (no hyphens, unlike the template `id`), and each one is used once.
 

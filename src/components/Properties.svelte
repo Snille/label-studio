@@ -202,8 +202,8 @@
           {#each pictures.list as p (p.id)}<option value={p.id}>{p.name} ({p.width} × {p.height})</option>{/each}
         </select>
       </label>
-      <label class="wide upload">Upload a picture (PNG, JPEG or SVG, at most 2 MB)
-        <input type="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" disabled={uploading} onchange={upload}>
+      <label class="wide upload">Upload a picture (PNG, JPEG, SVG or the first page of a PDF, at most 2 MB)
+        <input type="file" accept=".png,.jpg,.jpeg,.svg,.pdf,image/png,image/jpeg,image/svg+xml,application/pdf" disabled={uploading} onchange={upload}>
       </label>
       {#if uploading}<p class="wide muted small">Uploading…</p>{/if}
       {#if uploadError}<p class="wide error">{uploadError}</p>{/if}
