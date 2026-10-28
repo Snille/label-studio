@@ -226,3 +226,12 @@ test('a template for any roll saves media "*" and positions as shares of the lab
   // Millimetres are kept to 0.01 mm in the editor, so a round trip moves a share by far less than a printer dot.
   toDefinition(other, big).objects.forEach((o, i) => near(parseFloat(o.x), parseFloat(saved.objects[i].x), 0.01));
 });
+
+test('a built-in label without a text direction keeps following each roll', () => {
+  const box = { id: 'box', name: 'Box label', media: ['*'], fields: { title: { type: 'text' } },
+    objects: [{ id: 'title', type: 'text', x: 3, right: 3, y: '10%', h: '20%', text: '{{title}}', size: '$titleSize' }] };
+  const doc = toEditor(box, s0722540);
+  assert.equal(doc.orientation, '');
+  const saved = toDefinition(doc, canvasSize(s0722540, doc.orientation));
+  assert.equal(saved.orientation, undefined); assert.deepEqual(saved.media, ['*']); assert.equal(saved.objects[0].size, '$titleSize');
+});

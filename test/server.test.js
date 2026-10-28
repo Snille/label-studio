@@ -66,7 +66,7 @@ test('refuses admin calls and unknown API paths', async () => {
   const { calls, fetchImpl } = recorder();
   const app = await start(fetchImpl);
   try {
-    for (const [method, path] of [['GET', '/api/v1/settings'], ['PUT', '/api/v1/settings'], ['POST', '/api/v1/roll'], ['DELETE', '/api/v1/templates/abc/versions/1'], ['DELETE', '/api/v1/jobs'], ['GET', '/api/v1/templates/../settings']]) {
+    for (const [method, path] of [['GET', '/api/v1/settings'], ['PUT', '/api/v1/settings'], ['GET', '/api/v1/roll/readings'], ['DELETE', '/api/v1/templates/abc/versions/1'], ['DELETE', '/api/v1/jobs'], ['GET', '/api/v1/templates/../settings']]) {
       const res = await fetch(`${app.base}${path}`, { method, headers: { 'x-api-key': key } });
       assert.ok([403, 404].includes(res.status), `${method} ${path} gave ${res.status}`);
     }

@@ -57,6 +57,8 @@ export function resolveBox(item, canvas) {
 export const placeholders = text => [...String(text || '').matchAll(/\{\{\s*([^}]*?)\s*\}\}/g)].map(m => m[1]);
 export const fieldName = /^[a-zA-Z][a-zA-Z0-9_]{0,39}$/;
 export const templateId = /^[a-z0-9][a-z0-9-]{1,63}$/;
+// The built-in labels of label-service. A saved template with one of these ids replaces it once published.
+export const builtInIds = ['box', 'location', 'lines'];
 
 // A version 4 UUID for a print request. crypto.randomUUID exists only on https and localhost pages, and Studio is
 // served over plain http on the LAN; crypto.getRandomValues works everywhere.
@@ -87,8 +89,9 @@ export function editMedia(definition, presets, loadedKey) {
   return presets.find(p => definition.media.includes(p.key)) || presets.find(p => p.key === loadedKey) || presets[0];
 }
 
+// A template without a text direction (the built-in labels) follows each roll's own; orientation '' keeps it so.
 export function toEditor(definition, media) {
-  const orientation = definition.orientation || naturalOrientation(media);
+  const orientation = definition.orientation || '';
   const canvas = canvasSize(media, orientation);
   const objects = definition.objects.map(item => {
     const rest = Object.fromEntries(Object.entries(item).filter(([k]) => !geometryKeys.includes(k)));
@@ -123,7 +126,7 @@ export function toDefinition(doc, canvas) {
     return share ? { ...props, x: pct(x, canvas.w), y: pct(y, canvas.h), w: pct(w, canvas.w), h: pct(h, canvas.h) }
       : { ...props, x: clean(x), y: clean(y), w: clean(w), h: clean(h) };
   });
-  const definition = { id: doc.id, name: doc.name.trim(), media: share ? ['*'] : [...doc.media], orientation: doc.orientation, fields: syncFields(doc), objects };
+  const definition = { id: doc.id, name: doc.name.trim(), media: share ? ['*'] : [...doc.media], ...(doc.orientation ? { orientation: doc.orientation } : {}), fields: syncFields(doc), objects };
   if (doc.description?.trim()) definition.description = doc.description.trim();
   if (doc.printDensity) definition.printDensity = doc.printDensity;
   return definition;

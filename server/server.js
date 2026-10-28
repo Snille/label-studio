@@ -14,12 +14,13 @@ const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 const security = { 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
   'content-security-policy': "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" };
 
-// The calls Studio needs. Settings and roll reading stay on the label-service admin page.
+// The calls Studio needs, and reading the loaded roll (label-service asks the printer; Studio never does). Settings,
+// rolls, printers and the raw roll readings stay on the label-service admin page.
 const allowed = [
   ['GET', /^\/api\/v1\/(formats|status|templates|jobs)$/],
   ['GET', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}(\/versions)?$/],
   ['GET', /^\/api\/v1\/jobs\/[a-f0-9-]{36}$/],
-  ['POST', /^\/api\/v1\/(templates|previews|jobs)$/],
+  ['POST', /^\/api\/v1\/(templates|previews|jobs|roll)$/],
   ['POST', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}\/versions\/\d{1,6}\/(publish|archive)$/],
   ['DELETE', /^\/api\/v1\/templates\/[a-z0-9-]{2,64}$/],
   ['GET', /^\/api\/v1\/assets(\/[a-f0-9]{12}\/content)?$/],

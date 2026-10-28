@@ -1,5 +1,14 @@
 # History
 
+## 0.13.0 - 2026-10-28
+
+Needs label-service 0.16.0.
+
+- Read roll in the header: label-service reads the roll in the printer and selects a known roll as its format, so the roll can be changed without the admin page. The Studio server forwards `POST /api/v1/roll` and nothing else of the roll calls.
+- The built-in labels box, location and lines can be edited. Edit opens the original (or the published version); saving adds a version of that label, and publishing it replaces the original for every system. A version keeps the label's fields and stays for any roll. The library shows such a label once, with its versions.
+- A template whose every version is archived can be deleted, so the pictures and fonts it used can be deleted too. Before, a template that was once published kept them for ever.
+- Text direction has Follow the roll: a template without a direction, such as the built-in labels, keeps following each roll's own direction when it is saved.
+
 ## 0.12.0 - 2026-10-27
 
 Needs label-service 0.14.0 for uploaded fonts.

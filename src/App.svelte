@@ -17,6 +17,7 @@
   let keyInput = $state('');
   let loginError = $state('');
   let busy = $state(false);
+  let reading = $state(false);
 
   onMount(async () => {
     if (hasKey()) {
@@ -42,6 +43,20 @@
   }
   async function choosePrinter(id) {
     try { formats = await api(`/formats?printer=${encodeURIComponent(id)}`); printer = id; } catch (error) { alert(error.message); }
+  }
+  // label-service reads the roll's chip and selects a known roll as the printer's format. It never polls on its own,
+  // so this button is the way to tell it about a roll change.
+  async function readRoll() {
+    if (editor.dirty && !confirm('Reading the roll may change the loaded format. Keep editing afterwards?')) return;
+    reading = true;
+    try {
+      const { roll, selected, fits } = await api('/roll', { method: 'POST', body: { printer } });
+      await refreshFormats();
+      alert(selected ? `Loaded roll: ${roll.media.name}. It is now the printer's format.`
+        : !roll.media ? `The printer has roll ${roll.sku}, which label-service does not know yet. Add it on the label-service admin page.`
+        : !fits ? `The printer does not take roll ${roll.media.name}.` : `Loaded roll: ${roll.media.name}. No change.`);
+    } catch (error) { alert(error.message); }
+    reading = false;
   }
   async function refreshFormats() { try { formats = await api(`/formats?printer=${encodeURIComponent(printer)}`); } catch { /* keep the last answer */ } }
   function open(doc, media, source) {
@@ -95,6 +110,7 @@
         <span class="muted">{formats.printer.name}</span>
       {/if}
       <span class="roll" title="The roll loaded in the printer">Roll: {formats.media.sku} · {formats.media.widthMm} × {formats.media.heightMm} mm</span>
+      <button onclick={readRoll} disabled={reading} title="Ask label-service to read the roll in the printer and select it. Do it after a roll change, while nothing prints.">{reading ? 'Reading…' : 'Read roll'}</button>
       <button onclick={signOut}>Sign out</button>
     </header>
     {#if view === 'library'}

@@ -3,7 +3,7 @@
   import { api } from '../lib/api.js';
   import PictureList from './PictureList.svelte';
   import FontList from './FontList.svelte';
-  import { toEditor, blankTemplate, editMedia, naturalOrientation, templateId } from '../lib/model.js';
+  import { toEditor, blankTemplate, editMedia, naturalOrientation, templateId, builtInIds } from '../lib/model.js';
 
   let { formats, onopen } = $props();
   let templates = $state([]);
@@ -16,8 +16,9 @@
 
   const presets = $derived(formats.mediaPresets);
   // A template whose every version is archived is hidden unless asked for; label-service keeps it.
-  const shown = $derived(templates.filter(t => showArchived || !t.archived));
-  const hiddenCount = $derived(templates.filter(t => t.archived).length);
+  // A built-in label stays listed: with every edited version archived, its original prints.
+  const shown = $derived(templates.filter(t => showArchived || !t.archived || t.builtIn));
+  const hiddenCount = $derived(templates.filter(t => t.archived && !t.builtIn).length);
   const mediaName = key => key === '*' ? 'any roll' : presets.find(p => p.key === key)?.sku || key;
 
   async function load() {
@@ -29,7 +30,8 @@
 
   async function choose(template) {
     chosen = template; versions = [];
-    if (template.builtIn) return;
+    // A built-in label has versions only once it was edited here.
+    if (template.builtIn && !template.version) return;
     try { versions = (await api(`/templates/${template.id}/versions`)).versions.toReversed(); } catch (e) { error = e.message; }
   }
   async function fetchDefinition(id, version) {
@@ -39,7 +41,7 @@
     try {
       const record = await fetchDefinition(id, version);
       const media = editMedia(record.definition, presets, formats.mediaKey);
-      onopen(toEditor(record.definition, media), media, { id, version: record.version, status: record.status });
+      onopen(toEditor(record.definition, media), media, record.builtIn ? null : { id, version: record.version, status: record.status });
     } catch (e) { error = e.message; }
   }
   async function copy(id, version) {
@@ -77,7 +79,7 @@
     creating = null;
   }
   const idTaken = $derived(creating && templates.some(t => t.id === creating.id));
-  const idValid = $derived(creating && templateId.test(creating.id) && !['box', 'location', 'lines'].includes(creating.id));
+  const idValid = $derived(creating && templateId.test(creating.id) && !builtInIds.includes(creating.id));
 </script>
 
 <main class="library">
@@ -94,7 +96,7 @@
         <h2>New template</h2>
         <label>Name <input bind:value={creating.name} required maxlength="120" oninput={() => { if (!creating.idEdited) creating.id = slug(creating.name); }}></label>
         <label>Id (used by other systems) <input bind:value={creating.id} required oninput={() => { creating.idEdited = true; }}></label>
-        {#if creating.id && !idValid}<p class="error">2-64 lower-case letters, digits or hyphens; not box, location or lines.</p>{/if}
+        {#if creating.id && !idValid}<p class="error">2-64 lower-case letters, digits or hyphens; not box, location or lines (edit those in the list).</p>{/if}
         {#if idTaken}<p class="warn">This id exists. Saving adds a new version to that template.</p>{/if}
         <label>Label format
           <select bind:value={creating.mediaKey}>
@@ -121,8 +123,9 @@
             <td class="mono">{t.id}</td>
             <td>{t.builtIn ? 'any roll' : (t.media || []).map(mediaName).join(', ')}</td>
             <td>
-              {#if t.builtIn}<span class="status">built-in</span>
+              {#if t.builtIn && !t.version}<span class="status">built-in</span>
               {:else}
+                {#if t.builtIn}<span class="status">{t.replaced ? 'built-in, edited' : 'built-in'}</span>{/if}
                 <span class="status {t.status}">v{t.version} {t.status}</span>
                 {#if t.latest && t.latest.version !== t.version}<span class="status {t.latest.status}">v{t.latest.version} {t.latest.status}</span>{/if}
               {/if}
@@ -141,8 +144,14 @@
       <p class="mono muted">{chosen.id}</p>
       {#if chosen.description}<p>{chosen.description}</p>{/if}
       {#if chosen.builtIn}
-        <p class="muted">A built-in template. It cannot change, but you can start a new template from a copy.</p>
-        <button class="primary" onclick={() => copy(chosen.id)}>Duplicate</button>
+        <p class="muted">A built-in label. Other systems print it by its id on every roll. {chosen.replaced ? 'A version edited here prints instead of the original.' : 'The original prints until you publish an edited version.'}</p>
+        <div class="row">
+          <button class="primary" onclick={() => open(chosen.id)}>{chosen.replaced ? 'Edit the published version' : 'Edit'}</button>
+          <button onclick={() => copy(chosen.id)}>Duplicate as a new template</button>
+        </div>
+      {/if}
+      {#if chosen.builtIn && !chosen.version}
+        <p class="muted small">Archive every edited version to bring the original back.</p>
       {:else}
         <h3>Versions</h3>
         <ul class="versions">
@@ -162,11 +171,11 @@
           {/each}
         </ul>
         <p class="muted small">Other systems print the newest published version. Drafts print only from Studio.</p>
-        {#if chosen.everPublished}
-          <p class="muted small">This template has been published, so other systems may use it. It cannot be deleted; archive its versions to hide it.</p>
+        {#if chosen.everPublished && !chosen.archived}
+          <p class="muted small">This template has been published, so other systems may use it. Archive every version first; then it can be deleted, and the pictures and fonts it used can be deleted too.</p>
         {:else}
-          <button class="danger delete" onclick={remove}>Delete template</button>
-          <p class="muted small">It was never published, so no other system uses it. Deleting removes every version and cannot be undone.</p>
+          <button class="danger delete" onclick={remove}>{chosen.builtIn ? 'Delete the edited versions' : 'Delete template'}</button>
+          <p class="muted small">{chosen.everPublished ? 'Every version is archived, so no other system prints it.' : 'It was never published, so no other system uses it.'} Deleting removes every version and frees its pictures and fonts. It cannot be undone.</p>
         {/if}
       {/if}
     {:else}

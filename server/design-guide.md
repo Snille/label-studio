@@ -28,9 +28,9 @@ Templates are JSON for label-service, which renders and prints labels on DYMO La
 }
 ```
 
-- `id`: 2-64 lower-case letters, digits or hyphens; not `box`, `location` or `lines`. Saving the same id adds a version.
+- `id`: 2-64 lower-case letters, digits or hyphens. Saving the same id adds a version. `box`, `location` and `lines` are the built-in labels: a version with one of these ids replaces that label once published, so it keeps the label's fields and types and uses `media: ["*"]`.
 - `media`: the `key` of each roll the template is made for (from `list_media`), or `["*"]` for any roll with positions in percentages.
-- `orientation`: `portrait` or `landscape`, the direction the text reads. The canvas is the roll's width × height, turned a quarter when the orientation differs from the roll's own (landscape when the label is wider than tall).
+- `orientation`: `portrait` or `landscape`, the direction the text reads. Leave it out to follow each roll's own direction. The canvas is the roll's width × height, turned a quarter when the orientation differs from the roll's own (landscape when the label is wider than tall).
 - Coordinates are millimetres from the top left of the readable canvas, or a share of the side such as `"25%"`. Each axis takes exactly two of start, end and size: `x`/`right`/`w` and `y`/`bottom`/`h`. Every object must stay inside the canvas; one that reaches outside is a warning. A roll with `marginsMm` in `list_media` has edges that do not print (top, right, bottom and left as the label reads in its own direction; turned a quarter, the label's left edge becomes the canvas's top). An object that reaches into them is a warning too.
 - `rotate` (optional, any object): degrees clockwise about the centre of the object's box, -360 to 360. Lay the object out as it reads, then turn it: vertical text along a 25 mm edge is a box about 21 mm wide and a few mm high with `rotate: -90` (reads bottom to top) or `90` (top to bottom). The turned corners must stay on the canvas. Text fits and shrinks inside the box before it is turned. Keep barcodes at 0, 90, 180 or -90; a slanted code prints with jagged bars and may not scan.
 - `printDensity` (optional): `light`, `medium`, `normal` or `dark`.

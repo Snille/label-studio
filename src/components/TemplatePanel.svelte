@@ -1,9 +1,10 @@
 <script>
-  import { templateId } from '../lib/model.js';
+  import { templateId, builtInIds } from '../lib/model.js';
 
   let { editor, formats } = $props();
   const commit = () => editor.commit();
-  const idValid = $derived(templateId.test(editor.doc.id) && !['box', 'location', 'lines'].includes(editor.doc.id));
+  const idValid = $derived(templateId.test(editor.doc.id));
+  const builtIn = $derived(builtInIds.includes(editor.doc.id));
 </script>
 
 <div class="form">
@@ -11,7 +12,8 @@
   <label>Id (other systems print with this)
     <input bind:value={editor.doc.id} onchange={commit}>
   </label>
-  {#if !idValid}<p class="error">2-64 lower-case letters, digits or hyphens; not box, location or lines.</p>{/if}
+  {#if !idValid}<p class="error">2-64 lower-case letters, digits or hyphens.</p>{/if}
+  {#if builtIn}<p class="warn">This is the built-in label "{editor.doc.id}". Other systems print it on every roll, so it keeps its fields and stays for any roll. A published version replaces the original; archive every version to bring the original back.</p>{/if}
   {#if editor.source && editor.source.id !== editor.doc.id}<p class="warn">Saving now creates or extends the template "{editor.doc.id}", not "{editor.source.id}".</p>{/if}
   <label>Description<textarea rows="2" bind:value={editor.doc.description} maxlength="1000" onchange={commit}></textarea></label>
   <label class="check"><input type="checkbox" checked={Boolean(editor.doc.anyRoll)} onchange={e => { editor.doc.anyRoll = e.currentTarget.checked; commit(); }}> Any roll</label>
@@ -25,6 +27,7 @@
   </label>
   <label>Text direction
     <select bind:value={editor.doc.orientation} onchange={commit}>
+      <option value="">Follow the roll (its own direction)</option>
       <option value="portrait">Portrait (across the label)</option>
       <option value="landscape">Landscape (along the label)</option>
     </select>
