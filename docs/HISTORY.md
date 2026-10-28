@@ -1,5 +1,9 @@
 # History
 
+## 0.13.1 - 2026-10-28
+
+- A built-in label opened with Edit can be saved and published. The check before saving still refused the ids box, location and lines; it now only asks that such a label stays for any roll, and label-service checks its fields.
+
 ## 0.13.0 - 2026-10-28
 
 Needs label-service 0.16.0.

@@ -234,4 +234,7 @@ test('a built-in label without a text direction keeps following each roll', () =
   assert.equal(doc.orientation, '');
   const saved = toDefinition(doc, canvasSize(s0722540, doc.orientation));
   assert.equal(saved.orientation, undefined); assert.deepEqual(saved.media, ['*']); assert.equal(saved.objects[0].size, '$titleSize');
+  // It can be saved under its own id, as long as it stays for any roll.
+  assert.deepEqual(problems(doc), []);
+  assert.deepEqual(problems({ ...doc, anyRoll: false }), ['box is a built-in label, so it is for any roll: tick Any roll.']);
 });

@@ -2,7 +2,7 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.13.0, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.13.1, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
 
 ## How it fits
 

@@ -295,7 +295,9 @@ export function blankTemplate(media, { id = 'new-label', name = 'New label', ori
 // A short check before saving, so the user sees the problem next to the field instead of a server error.
 export function problems(doc) {
   const list = [];
-  if (!templateId.test(doc.id) || ['box', 'location', 'lines'].includes(doc.id)) list.push('The id must be 2-64 lower-case letters, digits or hyphens, and not box, location or lines.');
+  if (!templateId.test(doc.id)) list.push('The id must be 2-64 lower-case letters, digits or hyphens.');
+  // A version of a built-in label replaces it on every roll; label-service also checks that it keeps the label's fields.
+  if (builtInIds.includes(doc.id) && !doc.anyRoll) list.push(`${doc.id} is a built-in label, so it is for any roll: tick Any roll.`);
   if (!doc.name.trim()) list.push('Give the template a name.');
   if (!doc.objects.length) list.push('Add at least one object.');
   const ids = doc.objects.map(o => o.id).filter(Boolean);
