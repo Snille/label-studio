@@ -2,7 +2,15 @@
 
 A web app for designing label templates for label-service, the LAN print service for DYMO LabelWriter printers. You draw a template on a label to scale, give it named fields (`{{recipient}}`), check it against label-service's own rendering and publish it. Other systems then print it by its id with their own field values.
 
-Status: `VERSION` 0.13.1, phase 3 (see [history](docs/HISTORY.md) and the design report in [docs/forstudie.md](docs/forstudie.md), Swedish).
+Status: `VERSION` 0.13.1, in daily use. Needs [label-service](https://github.com/Snille/label-service) 0.16.0 or later. See the [history](docs/HISTORY.md) and the first design report in [docs/forstudie.md](docs/forstudie.md) (Swedish).
+
+![The editor: an asset tag with a Code 128 and a QR code, and label-service's preview on the right](docs/screenshots/editor.png)
+
+| Template library | Batch print from a sheet | Print a part of a PDF |
+| --- | --- | --- |
+| ![Template library with built-in and saved templates, pictures and fonts](docs/screenshots/library.png) | ![Batch print: pasted rows checked against the template, one row too long](docs/screenshots/batch.png) | ![Print PDF: a marked shipping label and its preview on a 102 × 210 mm roll](docs/screenshots/print-pdf.png) |
+
+The screenshots come from the local test stack below, with made-up data and no printer.
 
 ## How it fits
 
@@ -98,9 +106,11 @@ docker compose down -v
 | `PORT`, `HOST` | Listen address, default `3231` on `127.0.0.1` (`0.0.0.0` in the image). |
 | `LABEL_SERVICE_TIMEOUT_MS` | How long a forwarded call may take, default 150000 (a print may wait for the printer's queue). |
 
-## Portainer
+## Deploy
 
-Label Studio runs as its own container in the label-service stack (decision B3). Add the `studio` service from [compose.portainer.yaml](compose.portainer.yaml) to that stack, add the Studio key and role to its variables, and publish port 3231 on the LAN only.
+Label Studio runs as its own container in the label-service stack (decision B3). The `studio` service is already in label-service's [compose.portainer.yaml](https://github.com/Snille/label-service/blob/main/compose.portainer.yaml): add `studio=<key>` to `LABEL_CLIENT_KEYS` and `studio=designer` to `LABEL_CLIENT_ROLES`, and publish port 3231 on the LAN only. Set `LABEL_STUDIO_IMAGE` to pin another tag or digest. The published image is `mrsnille/label-studio` on Docker Hub (`linux/amd64`), tagged with the version and `latest`.
+
+Label Studio has no user accounts. Anyone who can reach port 3231 and has the Studio key can publish templates and print, so never expose it to the internet.
 
 Release: bump `VERSION`, add a history entry, run the checks, then build and push the image:
 
@@ -120,4 +130,4 @@ The Docker build runs the unit tests again. Label Studio stores no data of its o
 
 ## Licences
 
-The fonts in `public/fonts` are the ones label-service renders with: Liberation (SIL Open Font License 1.1) and DejaVu (free licence); their licence files are next to them.
+Label Studio is under the [MIT License](LICENSE). The fonts in `public/fonts` are the ones label-service renders with: Liberation (SIL Open Font License 1.1) and DejaVu (free licence); their licence files are next to them.

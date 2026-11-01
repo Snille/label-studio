@@ -1,5 +1,15 @@
 # History
 
+## Unreleased - 2026-11-01
+
+Preparing the repository to become public. No change to the app.
+
+- README: screenshots of the editor, library, batch print and Print PDF (from the local test stack, made-up data), the label-service version it needs, and a deploy section that points at the stack file in label-service.
+- Removed `compose.portainer.yaml`: it still named Label Studio 0.6.0, and the `studio` service lives in label-service's stack file.
+- The local test stack (`compose.yaml`) uses label-service 0.16.0, which this version needs.
+- Checked the repository and its whole git history for keys and LAN addresses: none found. An example picture id named the owner's employer; it was replaced in the history too (rewritten 2026-11-01; every commit and tag has a new hash).
+- MIT License (`LICENSE`, and `license` in `package.json`).
+
 ## 0.13.1 - 2026-10-28
 
 - A built-in label opened with Edit can be saved and published. The check before saving still refused the ids box, location and lines; it now only asks that such a label stays for any roll, and label-service checks its fields.

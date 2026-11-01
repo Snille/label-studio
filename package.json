@@ -1,5 +1,6 @@
 {
   "name": "label-studio",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "engines": {
